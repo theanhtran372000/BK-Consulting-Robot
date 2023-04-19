@@ -1,0 +1,6 @@
+pip==21.3.1
+setuptools==59.6.0
+ipykernel
+pycuda
+tensorrt
+opencv-python
