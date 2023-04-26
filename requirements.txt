@@ -1,5 +1,6 @@
 pip==21.3.1
 setuptools==59.6.0
+nuumpy==1.19.4
 ipykernel
 pycuda
 tensorrt

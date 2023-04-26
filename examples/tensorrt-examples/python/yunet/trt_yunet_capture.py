@@ -97,6 +97,8 @@ def main():
     parser.add_argument('--stream_result', type=bool, default=False, help='Stream result to the screen or not')
     
     args = parser.parse_args()
+    
+    
 
     if args.stream_result:
         # Initialize window.
