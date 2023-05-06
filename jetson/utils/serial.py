@@ -1,10 +1,11 @@
 import json
+from loguru import logger
 
 # Send string with Serial
 def send(ser, data, log=True):
     ser.write(bytes(data, 'UTF-8'))
     if log:
-        print('[INFO] Send ', data)
+        logger.info('Send ' + str(data))
     
 def read(ser):
     data = []

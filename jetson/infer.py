@@ -13,6 +13,7 @@ import os
 import time
 import yaml
 import serial
+from loguru import logger
 import argparse
 
 import cv2
@@ -40,15 +41,15 @@ def main():
     # Load configs
     with open(args.config, 'r') as f:
         configs = yaml.load(f, yaml.FullLoader)
-    print('[INFO] Configs: ', configs)
+    logger.info('Configs: ' + str(configs))
     
     # Open camera
-    print('[INFO] Open camera')
+    logger.info('Open camera')
     cap = cv2.VideoCapture(configs['cam']['device'])
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
-    print("[INFO] Camera info: h = {} \t w = {} \t fps = {} ".format(h, w, fps))
+    logger.info("Camera info: h = {} \t w = {} \t fps = {} ".format(h, w, fps))
     
     ser = serial.Serial(port=configs['serial']['port'], baudrate=configs['serial']['baudrate'])
     time.sleep(configs['serial']['warmup'])
@@ -66,7 +67,7 @@ def main():
     ) 
     w_scale = w / input_shape[0]
     h_scale = h / input_shape[1]
-    print('[INFO] Load model: ', model_name)
+    logger.info('Load model: ' + model_name)
 
     # Inferencing
     log_state = configs['log']['state']
@@ -77,7 +78,7 @@ def main():
         # Read and horizontal flip image (camera vision is opposite to human vision)
         ret, frame = cap.read()
         if not ret:
-            print("[ERROR] VideoCapture read failed!")
+            logger.error("VideoCapture read failed!")
             break
         frame = cv2.flip(frame, 1)
 
@@ -125,7 +126,7 @@ def main():
             # After a while not detect faces
             if time.time() - detect_face_since >= configs['cam']['reset_every']:
                 if log_state:
-                    print('[INFO] Reset camera position after {}s not detecting faces!'.format(configs['cam']['reset_every']))
+                    logger.info('Reset camera position after {}s not detecting faces!'.format(configs['cam']['reset_every']))
                 send_angle(ser, 0, 0, reset=True, log=log_state)   # Reset camera position
         
         # Future dev:
@@ -160,7 +161,7 @@ def main():
             avg_text = "Average {0:.2f}ms {1:.1f}FPS".format(avg_elapsed_ms, 1000 / avg_elapsed_ms)
             
             # log
-            print('[INFO]', avg_text)
+            logger.info(avg_text)
             
             # reset
             since = time.perf_counter()

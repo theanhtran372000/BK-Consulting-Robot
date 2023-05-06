@@ -16,6 +16,7 @@ import numpy as np
 import cv2 as cv
 import tensorrt as trt
 from itertools import product
+from loguru import logger
 
 from utils import common
 
@@ -64,7 +65,7 @@ class TrtYuNet:
 
     # Load TensorRT engine file
     def _getEngine(self, engine_file_path):
-        print("Reading engine from file {}".format(engine_file_path))
+        logger.info("Reading engine from file {}".format(engine_file_path))
         with open(engine_file_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
             return runtime.deserialize_cuda_engine(f.read())
 
