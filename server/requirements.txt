@@ -1,0 +1,17 @@
+Flask
+numpy==1.23
+loguru
+pyyaml
+librosa==0.9.1
+ruamel.yaml
+python-dateutil
+wrapt
+wget
+pandas
+frozendict
+inflect
+unidecode
+torch_stft
+pyctcdecode
+openai
+gTTS

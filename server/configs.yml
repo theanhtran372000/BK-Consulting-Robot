@@ -1,0 +1,20 @@
+app:
+  host: '0.0.0.0'
+  port: 9000
+  save_dir: 'save/tmps'
+  multithread: True
+
+stt:
+  config: 'stt/configs/quartznet12x1_vi.yaml'
+  encoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperEncoder-STEP-289936.pt'
+  decoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperDecoderForCTC-STEP-289936.pt'
+  lm_path: 'stt/models/language_model/3-gram-lm.binary'
+  beam_width: 50
+  device: 'gpu'
+
+answer:
+  openai_key_path: 'save/keys/openai.txt'
+
+tts:
+  language: 'vi'
+  slow: False
