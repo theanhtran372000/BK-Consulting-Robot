@@ -1,0 +1,33 @@
+server:
+  address: '169.254.234.10'
+  port: 9000
+
+device:
+  mic_index: 11
+
+sample:
+  greet: 'assets/voices/greet.mp3'
+  repeat: 'assets/voices/repeat.mp3'
+  goodbye: 'assets/voices/goodbye.mp3'
+  retry: 'assets/voices/retry.mp3'
+
+save: 
+  dir: 'assets/tmp'
+
+stt:
+  lang: 'vi'
+
+answer:
+  key: 'assets/openai/key.txt'
+  prompt:
+    default: 'assets/prompts/default.txt'
+  finish_word: '[DONE]'
+
+tts:
+  lang: 'vi'
+  slow: False
+  split_char: '.'
+  num_sent: 1 # Speak every sentence
+
+statement:
+  exit: "tạm biệt"

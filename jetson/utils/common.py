@@ -18,7 +18,7 @@ import argparse
 import os
 
 import numpy as np
-import pycuda.autoinit
+# import pycuda.autoinit
 import pycuda.driver as cuda
 import tensorrt as trt
 
@@ -120,7 +120,7 @@ def allocate_buffers(engine):
     inputs = []
     outputs = []
     bindings = []
-    stream = cuda.Stream()
+    # stream = cuda.Stream()
     for binding in engine:
         size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
         dtype = trt.nptype(engine.get_binding_dtype(binding))
@@ -134,7 +134,7 @@ def allocate_buffers(engine):
             inputs.append(HostDeviceMem(host_mem, device_mem))
         else:
             outputs.append(HostDeviceMem(host_mem, device_mem))
-    return inputs, outputs, bindings, stream
+    return inputs, outputs, bindings
 
 # This function is generalized for multiple inputs/outputs.
 # inputs and outputs are expected to be lists of HostDeviceMem objects.
