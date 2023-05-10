@@ -28,5 +28,5 @@ pip install -r requirements.txt
 ## 2. Run
 To config server params, go to file `configs.yml`. Then run server with following command:
 ```
-python app.py --config=configs.yml
+bash scripts/run.sh
 ```
