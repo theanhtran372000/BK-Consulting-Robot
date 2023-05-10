@@ -6,21 +6,26 @@ sys.path.insert(0, os.path.abspath('stt'))
 import time
 import yaml
 import uuid
+import json
 import argparse
 from pathlib import Path
 
 
-from flask import Flask, request, after_this_request, send_file
+from flask import Flask, request, after_this_request, send_file, Response
 from loguru import logger
 
 
+import requests
 import librosa
 import openai
 
 
 from gtts import gTTS
 from infer import VietASR
+from utils import format_sse
+from utils import create_answer_generator
 from utils import get_chatgpt_answer
+from utils import prepare_streaming_request
 
 
 # Helper fucntions
@@ -152,6 +157,69 @@ def answer():
             'answer': answer
         }
     )
+    
+
+@app.route('/stream_answer', methods=['POST'])
+def stream_answer():
+    
+    # Get params
+    content = request.get_json()
+    if 'question' in content:
+        query = content['question']
+        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
+    else:
+        logger.error('Question not found!')
+        return create_response(
+            'error',
+            'Question not found!',
+            None
+        )
+    
+    try:
+        # Streaming result from ChatGPT
+        logger.info('[ANSWER] Streaming answer:')
+        url, header, body = prepare_streaming_request(
+            query, 
+            API_KEY, 
+            model_name=configs['answer']['model_name'],
+            role=configs['answer']['role'],
+            temperature=configs['answer']['temperature'],
+            max_tokens=configs['answer']['max_tokens'],
+        )
+        
+        response = requests.post(
+            url,
+            headers=header,
+            json=body,
+            stream=True
+        )
+    
+        generator = create_answer_generator(
+            response,
+            finish_word=configs['answer']['finish_word']
+        )
+
+        def stream():
+            print()
+            for data in generator:
+                print(data, end='', flush=True)
+                yield format_sse(data)
+            print()
+            
+        return Response(stream(), mimetype='text/event-stream')
+    except:
+        logger.exception('Connection error!')
+        
+        def except_stream():
+            sent = 'Kết nối không ổn định. Vui lòng thử lại sau. [DONE]'
+            words = sent.split(' ')
+            
+            for word in words:
+                data = word + ' '
+                print(data, end='', flush=True)
+                yield format_sse(data)
+                
+        return Response(except_stream(), mimetype='text/event-stream')
 
 @app.route('/tts', methods=['POST'])
 def tts():
@@ -186,18 +254,18 @@ def tts():
     logger.success('[TTS] Speech file generate successfully!')
     logger.success('[TTS] Done after {:.2f}s!'.format(time.time() - start))
     
-    # # Clean
-    # @after_this_request
-    # def remove_file(response):
-    #     try:
-    #         os.remove(localpath)
-    #         logger.info('{} removed!'.format(localpath))
+    # Clean
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(localpath)
+            logger.info('{} removed!'.format(localpath))
             
-    #     except Exception as error:
-    #         logger.error('Fail to remove {}'.format(localpath))
-    #         logger.error('Error message: ' + str(error))
+        except Exception as error:
+            logger.error('Fail to remove {}'.format(localpath))
+            logger.error('Error message: ' + str(error))
             
-    #     return response
+        return response
     
     return send_file(localpath)
     
@@ -218,7 +286,9 @@ if __name__ == '__main__':
     
     # Init Open AI
     logger.info('Config OpenAI')  
-    openai.api_key = open(configs['answer']['openai_key_path'], 'r').read().strip()
+    API_KEY = open(configs['answer']['openai_key_path'], 'r').read().strip()
+    openai.api_key = API_KEY
+    
     
     # Init STT model (VietASR)
     vietasr = VietASR(
