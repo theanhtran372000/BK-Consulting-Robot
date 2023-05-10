@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 
 # Custom ignore
-*.mp4
+assets/tmp
+assets/videos
+assets/openai

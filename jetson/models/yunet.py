@@ -17,6 +17,8 @@ import cv2 as cv
 import tensorrt as trt
 from itertools import product
 from loguru import logger
+import pycuda.autoinit
+import pycuda.driver as cuda
 
 from utils import common
 
@@ -35,6 +37,9 @@ class TrtYuNet:
         top_k=5000,
         keep_top_k=750,
     ):
+        self._cfx = cuda.Device(0).make_context()
+        self._stream = cuda.Stream()
+        
         self._model_path = model_path
         self._engine = self._getEngine(self._model_path)
         self._context = self._engine.create_execution_context()
@@ -78,24 +83,31 @@ class TrtYuNet:
 
     # Infer pipeline
     def infer(self, image):
+        self._cfx.push()
+        
         # Preprocess
         input_blob = self._preprocess(image)
-
+        
         # Forward
-        inputs, outputs, bindings, stream = common.allocate_buffers(self._engine)
+        inputs, outputs, bindings = common.allocate_buffers(self._engine)
         inputs[0].host = np.ascontiguousarray(input_blob)
         outputs = common.do_inference_v2(
             self._context,
             bindings=bindings,
             inputs=inputs,
             outputs=outputs,
-            stream=stream,
+            stream=self._stream,
         )
 
         # Postprocess
         results = self._postprocess(outputs)
+        
+        self._cfx.pop()
 
         return results
+    
+    def destroy(self):
+        self._cfx.pop()
 
     # Postprocess output: Decode -> NMS -> Return top K
     def _postprocess(self, output_blob):
