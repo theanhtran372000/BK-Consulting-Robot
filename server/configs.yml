@@ -19,6 +19,7 @@ answer:
   role: 'user'
   max_tokens: 1024
   finish_word: '[DONE]'
+  break_word: '[BREAK]'
 
 tts:
   language: 'vi'
