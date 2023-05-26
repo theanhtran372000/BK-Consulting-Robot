@@ -19,14 +19,15 @@ stt:
 
 answer:
   key: 'assets/openai/key.txt'
-  prompt:
-    default: 'assets/prompts/default.txt'
+  # prompt:
+  #   default: 'assets/prompts/default.txt'
   finish_word: '[DONE]'
+  break_word: '[BREAK]'
 
 tts:
   lang: 'vi'
   slow: False
-  split_char: '.'
+  split_char: '. '
   num_sent: 1 # Speak every sentence
 
 statement:
