@@ -108,7 +108,7 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
                     send_angle(ser, 0, 0, reset=True, log=log_state)   # Reset camera position
             
             # Future dev:
-            # - Threshold for face size
+            # TODO: Threshold for face size
 
             # Calc fps.
             inference_time = (time.perf_counter() - start) * 1000
@@ -117,7 +117,7 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
             if (time.perf_counter() - since) > cam_configs['log']['every']:
                 # elapsed_list.pop(0)
                 avg_elapsed_ms = np.mean(elapsed_list)
-                avg_text = "Average {0:.2f}ms {1:.1f}FPS".format(avg_elapsed_ms, 1000 / avg_elapsed_ms)
+                avg_text = "Face tracking: Average {0:.2f}ms {1:.1f}FPS".format(avg_elapsed_ms, 1000 / avg_elapsed_ms)
                 
                 # log
                 logger.info(avg_text)
@@ -132,11 +132,33 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
         cap.release()
 
 
+answer_queue = queue.Queue()
+# Run in background
+def speak_answer():
+    global answer_queue
+    
+    start = time.time()
+    while True:
+        # Get an speech from queue
+        sentence, answerpath = answer_queue.get()
+        if sentence == '[DONE]':
+            logger.info('Done speaking after {:.2f}s!'.format(time.time() - start))
+            break
+        
+        logger.info('Speak: ' + sentence)
+        
+        # Speak
+        play_sound_sync(answerpath)
+        
+        # Remove that speech
+        os.remove(answerpath)
+
 word_queue = queue.Queue()
 def generate_speech(speech_configs):
     
     # global vars
     global word_queue
+    global answer_queue
     global error
     
     # Params
@@ -155,8 +177,20 @@ def generate_speech(speech_configs):
     total_time = 0
     done = False
     
+    # Empty answer queue first
+    while not answer_queue.empty():
+        answer_queue.get()
+    
     # Read until final word reached
     try:
+        # Create speak thread
+        speak_thread = Thread(
+            name='Speaking thread',
+            target=speak_answer
+        )
+        speak_thread.start()
+        
+        # Start reading sentence
         while True:
             # Get a word from queue and add to word stream
             word = word_queue.get()
@@ -164,7 +198,7 @@ def generate_speech(speech_configs):
             # Remove line break characters
             word = word.replace(break_word, ' ')
             word = re.sub(' +', ' ', word)
-            print('[{}] - {}'.format(word, len(word)))
+            # print('[{}] - {}'.format(word, len(word)))
             stream += word
             
             # Split sentence every time see a split character or finish word
@@ -185,7 +219,7 @@ def generate_speech(speech_configs):
                 if len(sentence) == 0:
                     logger.error('Speak: Get empty sentence')
                     continue
-                logger.info('Speak: ' + sentence)
+                # logger.info('Speak: ' + sentence)
                 
                 # Speech to text this sentence
                 start = time.time()
@@ -200,11 +234,13 @@ def generate_speech(speech_configs):
                 speech.save(answerpath)
                 total_time += time.time() - start
                 
-                # Speak
-                play_sound_sync(answerpath)
+                # # Speak
+                # play_sound_sync(answerpath)
+                # Add to speech queue
+                answer_queue.put((sentence, answerpath))
                 
                 # Postprocess
-                os.remove(answerpath) # Delete temp file
+                # os.remove(answerpath) # Delete temp file
                 sent_list = [] # Reset
                     
             # Stop this thread if done flag is raise
@@ -212,6 +248,10 @@ def generate_speech(speech_configs):
                 break
         
         logger.info('Text to speech done after {:.2f}s'.format(total_time))
+        
+        # Wait speak thread to stop
+        answer_queue.put(('[DONE]', ''))
+        speak_thread.join()
         
     except:
         logger.exception("Fail to generate speech")
@@ -379,9 +419,14 @@ def main():
                 try:
                     # Send request to server
                     # question = apply_prompt(transcript, speech_configs['answer']['prompt']['default'])
+                    
+                    # Announce
+                    play_sound_async(speech_configs['sample']['think'])
+                    
+                    # Get answer
                     question = transcript
                     response = requests.post(
-                        'http://{}:{}/stream_answer'.format(
+                        'http://{}:{}/stream_answer_stable'.format(
                             speech_configs['server']['address'],
                             speech_configs['server']['port']
                         ),
@@ -406,8 +451,12 @@ def main():
                     tts_thread.start()
                     
                     # Recieving object
+                    has_recieved = False
                     client = sseclient.SSEClient(response)
                     for event in client.events():
+                        if not has_recieved:
+                            logger.info('Establish connection done after {:.2f}s'.format(time.time() - start))
+                            has_recieved = True
                         word = event.data
                         word_queue.put(word)                           
                         if word == speech_configs['answer']['finish_word']:

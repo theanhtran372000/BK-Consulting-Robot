@@ -40,7 +40,7 @@ def main():
     
     speech = gTTS(
         text=args.input_text, 
-        lang=configs['tts']['language'], 
+        lang=configs['tts']['lang'], 
         slow=configs['tts']['slow']
     )
     

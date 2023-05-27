@@ -10,6 +10,7 @@ sample:
   repeat: 'assets/voices/repeat.mp3'
   goodbye: 'assets/voices/goodbye.mp3'
   retry: 'assets/voices/retry.mp3'
+  think: 'assets/voices/think.mp3'
 
 save: 
   dir: 'assets/tmp'
@@ -19,8 +20,6 @@ stt:
 
 answer:
   key: 'assets/openai/key.txt'
-  # prompt:
-  #   default: 'assets/prompts/default.txt'
   finish_word: '[DONE]'
   break_word: '[BREAK]'
 
