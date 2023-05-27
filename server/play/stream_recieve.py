@@ -53,17 +53,45 @@ def test_api(prompt):
         
     print()
 
-def recieve_sse():
+def recieve_sse(question):
+    start = time.time()
     client = sseclient.SSEClient(
-        requests.get('http://localhost:5000/listen', stream=True)
+        requests.post(
+            'http://localhost:9000/stream_answer', 
+            json={
+              "question"  : question
+            },
+            stream=True
+        )
     )
 
+    start_recieving = False
     for event in client.events():
-        print(event.data, end=' ', flush=True)
-        
-    print('Done!')
+        if not start_recieving:
+            print('Establish connection done after {:.2f}s'.format(time.time() - start))
+            start_recieving = True
+        print(event.data, end='', flush=True)
+    
+    client.close()
+    print()
+    print('Done after {:.2f}s!'.format(time.time() - start))
     
 if __name__ == '__main__':
-    # recieve_sse()
-    test_api('What is Python?')
+    questions = [
+        "Giới thiệu về đại học Bách Khoa Hà Nội",
+        "Tại sao nước biển lại mặn",
+        "Tại sao bầu trời lại màu xanh",
+        "Tại sao cá lại thở được dưới nước",
+        "Hoa thụ phấn như thế nào",
+        "Cây quang hợp như thế nào",
+        "Nhiệt độ nóng chảy của thủy ngân là bao nhiêu?",
+        "Giải thích chỉ số BMI",
+        "Thực phẩm biến đổi gen là gì?",
+        "Hoang mạc lớn nhất thế giới là gì?"
+    ]
+    
+    for question in questions:
+        print('= ' * 5 + '[{}]'.format(question) + ' =' * 5)
+        recieve_sse(question)
+    # test_api('What is Python?')
     

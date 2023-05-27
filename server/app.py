@@ -203,6 +203,8 @@ def stream_answer():
             print()
             for data in generator:
                 print(data, end='', flush=True)
+                data = data.replace('\n', configs['answer']['break_word'])
+                data = data.replace('\r', configs['answer']['break_word'])
                 yield format_sse(data)
             print()
             
@@ -211,7 +213,7 @@ def stream_answer():
         logger.exception('Connection error!')
         
         def except_stream():
-            sent = 'Kết nối không ổn định. Vui lòng thử lại sau. [DONE]'
+            sent = 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
             words = sent.split(' ')
             
             for word in words:
