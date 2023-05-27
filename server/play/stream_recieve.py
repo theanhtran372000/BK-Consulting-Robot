@@ -57,7 +57,7 @@ def recieve_sse(question):
     start = time.time()
     client = sseclient.SSEClient(
         requests.post(
-            'http://localhost:9000/stream_answer', 
+            'http://localhost:9000/stream_answer_stable', 
             json={
               "question"  : question
             },

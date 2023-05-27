@@ -7,6 +7,7 @@ import time
 import yaml
 import uuid
 import json
+import queue
 import argparse
 from pathlib import Path
 
@@ -18,6 +19,9 @@ from loguru import logger
 import requests
 import librosa
 import openai
+import sseclient
+from requests.adapters import HTTPAdapter
+from threading import Thread, currentThread
 
 
 from gtts import gTTS
@@ -222,6 +226,139 @@ def stream_answer():
                 yield format_sse(data)
                 
         return Response(except_stream(), mimetype='text/event-stream')
+
+
+@app.route('/stream_answer_stable', methods=['POST'])
+def stream_answer_stable():
+    # Get params
+    content = request.get_json()
+    if 'question' in content:
+        query = content['question']
+        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
+    else:
+        logger.error('Question not found!')
+        return create_response(
+            'error',
+            'Question not found!',
+            None
+        )
+        
+    # Streaming result from ChatGPT
+    logger.info('[ANSWER] Streaming answer:')
+    url, header, body = prepare_streaming_request(
+        query, 
+        API_KEY, 
+        model_name=configs['answer']['model_name'],
+        role=configs['answer']['role'],
+        temperature=configs['answer']['temperature'],
+        max_tokens=configs['answer']['max_tokens'],
+    )
+    
+    # Prepare answer queue
+    word_queue = queue.Queue()
+    retry_time = configs['answer']['retry']
+    finish_word = configs['answer']['finish_word']
+    timeout = configs['answer']['timeout']
+    error_statement = configs['answer']['statement']['connection_error']
+    
+    def chatgpt_reciever(
+        url, header, body, 
+        word_queue, retry_time, timeout, 
+        finish_word, error_statement
+    ):
+        # Try to establish connection
+        for i in range(retry_time):
+            try:
+                logger.info('Try to connect to ChatGPT. Trial {}...'.format(i + 1))
+                
+                # Sending request
+                sess = requests.Session()
+                sess.mount(
+                    'https://api.openai.com.com', 
+                    HTTPAdapter(max_retries=0)
+                )
+                response = sess.post(
+                    url,
+                    headers=header,
+                    json=body,
+                    stream=True,
+                    timeout=timeout
+                )
+                
+                # Establish SSE connection
+                client = sseclient.SSEClient(response)
+                has_sent = False
+                for event in client.events():
+                    if event.data != finish_word:
+                        data = json.loads(event.data)
+                        if 'content' in data['choices'][0]['delta']:
+                            word = data['choices'][0]['delta']['content']
+                            word_queue.put(word)
+                            has_sent = True
+                    else:
+                        word_queue.put(finish_word)
+                        has_sent = True
+                
+                print()
+                if has_sent:    
+                    logger.success('Success in the {}th trial!'.format(i + 1))        
+                    break
+                else:
+                    logger.error('Recieve empty message!')
+                    raise Exception("Recieve empty message!")
+            
+            except:
+                logger.exception('ChatGPT connection error')
+                # Retry
+                if i + 1 < retry_time:
+                    logger.info('Try to reconnect...')
+                else:
+                    logger.info('Reconnection trials exceeded. Failed after {} trial!'.format(retry_time))
+                    
+                    # If exceed trial times, return error
+                    sent = error_statement
+                    words = sent.split(' ')
+                    
+                    for word in words:
+                        data = word + ' '
+                        word_queue.put(data)
+            
+            finally:
+                if 'client' in locals():
+                    client.close()
+    
+    recieve_thread = Thread(
+        name='ChatGPT recieve thread',
+        target=chatgpt_reciever,
+        args=(
+            url, header, body,
+            word_queue,
+            retry_time,
+            timeout,
+            finish_word,
+            error_statement
+        )
+    )
+    recieve_thread.start()
+    
+    # Create stream to send answer
+    def stream(word_queue, finish_word):
+        while True:
+            # Get words from queue
+            data = word_queue.get()
+            print(data, end='', flush=True)
+            
+            # Reformat and return
+            data = data.replace('\n', configs['answer']['break_word'])
+            data = data.replace('\r', '')
+            yield format_sse(data)
+            
+            # Break if meet finish word
+            if data == finish_word:
+                logger.info('Meet finish word {}. Stop responding!'.format(finish_word))
+                break
+        
+    return Response(stream(word_queue, finish_word), mimetype='text/event-stream')
 
 @app.route('/tts', methods=['POST'])
 def tts():
