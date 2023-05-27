@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import yaml
 import uuid
@@ -140,6 +141,7 @@ def generate_speech(speech_configs):
     
     # Params
     final_word = speech_configs['answer']['finish_word']
+    break_word = speech_configs['answer']['break_word']
     split_char = speech_configs['tts']['split_char']
     num_sent = speech_configs['tts']['num_sent']
     lang = speech_configs['tts']['lang']
@@ -148,54 +150,65 @@ def generate_speech(speech_configs):
     sound_path = speech_configs['sample']['retry']
     
     # List unpacked words
-    word_list = []
-    sent_cnt = 0
+    sent_list = []
+    stream = "" 
     total_time = 0
+    done = False
     
     # Read until final word reached
     try:
         while True:
-            # Get a word from queue
+            # Get a word from queue and add to word stream
             word = word_queue.get()
-            if final_word not in word:
-                word_list.append(word)
             
-            # Count sentence
-            if split_char in word:
-                sent_cnt += 1
+            # Remove line break characters
+            word = word.replace(break_word, ' ')
+            word = re.sub(' +', ' ', word)
+            print('[{}] - {}'.format(word, len(word)))
+            stream += word
             
-            # If reach split char or final word
-            if sent_cnt >= num_sent or final_word in word:
-                # At least 1 word 
-                if len(word_list) > 0:
-                    sentence = ''.join(word_list)
-                    logger.info('Speak: ' + sentence)
+            # Split sentence every time see a split character or finish word
+            if split_char in stream:
+                idx = stream.find(split_char)
+                sent_list.append(stream[: idx + len(split_char)])
+                stream = stream[idx + len(split_char):]
+            
+            if final_word in stream:
+                idx = stream.find(final_word)
+                sent_list.append(stream[: idx])
+                stream = ""
+                done = True
+            
+            # If get enough sentence or final word
+            if len(sent_list) >= num_sent or done:
+                sentence = "".join(sent_list)
+                if len(sentence) == 0:
+                    logger.error('Speak: Get empty sentence')
+                    continue
+                logger.info('Speak: ' + sentence)
+                
+                # Speech to text this sentence
+                start = time.time()
+                speech = gTTS(
+                    text=sentence, 
+                    lang=lang, 
+                    slow=slow
+                )
+                
+                answerfile = '{}.mp3'.format(str(uuid.uuid4()))
+                answerpath = os.path.join(save_dir, answerfile)
+                speech.save(answerpath)
+                total_time += time.time() - start
+                
+                # Speak
+                play_sound_sync(answerpath)
+                
+                # Postprocess
+                os.remove(answerpath) # Delete temp file
+                sent_list = [] # Reset
                     
-                    # Reset
-                    word_list = []
-                    sent_cnt = 0
-                    
-                    # Speech to text this sentence
-                    start = time.time()
-                    speech = gTTS(
-                        text=sentence, 
-                        lang=lang, 
-                        slow=slow
-                    )
-                    
-                    answerfile = '{}.mp3'.format(str(uuid.uuid4()))
-                    answerpath = os.path.join(save_dir, answerfile)
-                    speech.save(answerpath)
-                    total_time += time.time() - start
-                    
-                    # Speak
-                    play_sound_sync(answerpath)
-                    
-                    # Delete temp file
-                    os.remove(answerpath)
-                    
-            # Stop thread
-            if final_word in word:
+            # Stop this thread if done flag is raise
+            if done:
                 break
         
         logger.info('Text to speech done after {:.2f}s'.format(total_time))
@@ -365,7 +378,8 @@ def main():
                 # Streaming
                 try:
                     # Send request to server
-                    question = apply_prompt(transcript, speech_configs['answer']['prompt']['default'])
+                    # question = apply_prompt(transcript, speech_configs['answer']['prompt']['default'])
+                    question = transcript
                     response = requests.post(
                         'http://{}:{}/stream_answer'.format(
                             speech_configs['server']['address'],
