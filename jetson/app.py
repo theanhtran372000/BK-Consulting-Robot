@@ -28,6 +28,7 @@ from utils.serial import send_angle
 from utils.angle import calculate_angle
 from utils.sound import play_sound_async, play_sound_sync
 from utils.answer import get_chatgpt_answer, apply_prompt
+from utils.distance import in_active_range
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -43,6 +44,7 @@ current_face = None
 def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
     
     # Global vars
+    global error
     global cam_stop
     global current_face
     
@@ -88,6 +90,7 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
                 
                 # Save result to global var
                 current_face = frame[face[1] : face[3], face[0] : face[2]].copy()
+                # logger.info('Face size: ' +  str(current_face.shape))
                 
                 # Calculate rotation angle
                 x_delta, y_delta = calculate_angle(
@@ -105,7 +108,13 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
                 if time.time() - detect_face_since >= cam_configs['cam']['reset_every']:
                     if log_state:
                         logger.info('Reset camera position after {}s not detecting faces!'.format(cam_configs['cam']['reset_every']))
+                    
+                    # Reset camera
                     send_angle(ser, 0, 0, reset=True, log=log_state)   # Reset camera position
+                    
+                    # Reset system state
+                    current_face = None
+                    error = False
             
             # Future dev:
             # TODO: Threshold for face size
@@ -346,15 +355,37 @@ def main():
             # Loop
             while True:
                 
+                # Deactive if can't detect face 
+                if current_face is None:
+                    time.sleep(speech_configs['device']['sleep_time'])
+                    continue
+                
+                # Or face out of range
+                distance, in_range = in_active_range(
+                    current_face,
+                    cam_configs['cam']['active_range'],
+                    cam_configs['cam']['facesize_1m'],
+                    cam_configs['cam']['range_precise']
+                )
+                
+                if not in_range:
+                    time.sleep(speech_configs['device']['sleep_time'])
+                    continue
+                
+                # Else: active to user
+                logger.info('Detect user in active range. Distance {}m.'.format(distance))
+                
+                
                 # LISTEN
                 # Process background noise
                 listener.adjust_for_ambient_noise(mic)
                 
-                # Wait for speech
+                # Greet if start or not error in previous time
                 if not error:
                     logger.info('Greet')
                     play_sound_sync(speech_configs['sample']['greet'])
                 
+                # Wait for speech
                 logger.info('Listening')
                 voice = listener.listen(mic)
                 since = time.time()

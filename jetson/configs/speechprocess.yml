@@ -4,6 +4,7 @@ server:
 
 device:
   mic_index: 11
+  sleep_time: 0.01 # seconds
 
 sample:
   greet: 'assets/voices/greet.mp3'

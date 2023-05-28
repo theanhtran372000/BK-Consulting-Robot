@@ -2,6 +2,9 @@ cam:
   scope:
     x: 85
     y: 45
+  facesize_1m: 62100 # 270x230 px
+  active_range: 1.0 # meter
+  range_precise: 1 # decimal place
   device: 0
   grid: 5 # degree
   reset_every: 5 # seconds when not detect faces
