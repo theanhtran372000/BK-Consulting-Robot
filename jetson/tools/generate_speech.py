@@ -6,6 +6,7 @@ import requests
 from pathlib import Path
 from loguru import logger
 from gtts import gTTS
+from pydub import AudioSegment
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -47,7 +48,19 @@ def main():
     # Make dir if needed
     Path(os.path.sep.join(args.output_path.split(os.path.sep)[:-1])).mkdir(parents=True, exist_ok=True)
     
-    speech.save(args.output_path)
+    if args.output_path[-3:] == 'mp3':
+        speech.save(args.output_path)
+
+    else:
+        # Save mp3 file
+        answerpath = args.output_path[:-3] + 'mp3'
+        speech.save(answerpath)
+        
+        # Convert to wav file
+        audio = AudioSegment.from_mp3(answerpath)
+        audio.export(args.output_path, format='wav')
+        os.remove(answerpath)
+        
     logger.info('Voice file saved to: ' + args.output_path)
     
 

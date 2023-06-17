@@ -132,3 +132,4 @@ dmypy.json
 assets/tmp
 assets/videos
 assets/openai
+log

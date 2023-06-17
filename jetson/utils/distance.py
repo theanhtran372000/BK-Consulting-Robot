@@ -1,10 +1,14 @@
 import numpy as np
 
-def get_face_distance(face, facesize_1m, inf=999):
-  # Get face size
+def get_face_distance(face, facesize_1m, inf=9999):
+  
+  # Detect none
+  if face is None:
+    return inf
+  
+  # Face too small
   w, h, _ = face.shape
   face_size = w * h
-  
   if face_size == 0:
     return inf
   
