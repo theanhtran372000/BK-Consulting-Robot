@@ -54,6 +54,8 @@ def create_answer_generator(request, finish_word='[DONE]'):
                 yield word
         else:
             yield finish_word
+            
+    client.close()
         
 def format_sse(data: str, event=None):
     msg = f'data: {data}\n\n'
