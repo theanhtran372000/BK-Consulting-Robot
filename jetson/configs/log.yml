@@ -1,0 +1,5 @@
+stats:
+  dir: log/stats
+  every: 10 # seconds
+  mem_threshold: 95 # % of memory
+  exit_code: 100

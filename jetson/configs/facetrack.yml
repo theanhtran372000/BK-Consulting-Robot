@@ -2,21 +2,29 @@ cam:
   scope:
     x: 85
     y: 45
+  facesize_1m: 62100 # 270x230 px
+  active_range: 1.0 # meter
+  range_precise: 1 # decimal place
   device: 0
   grid: 5 # degree
   reset_every: 5 # seconds when not detect faces
+
 model:
   path: 'assets/models/face_detection_yunet_120x160.trt'
+
 infer:
   input_shape: '160,120'
-  conf_threshold: 0.9   # Filter low confident bboxes
+  conf_threshold: 0.95   # Filter low confident bboxes
   nms_threshold: 0.3    # NMS threshold
   top_k: 500            # Keep top_k bboxes before NMS
   keep_top_k: 50        # Keep keep_top_k bboxes after NMS
+  face_size_thresh: 900 # 30x30
+
 log:
   state: False          # Log or not
   dir: 'logs'           # logs folder
   every: 10             # seconds
+  
 serial:
   port: '/dev/ttyACM0'
   baudrate: 115200
