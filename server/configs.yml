@@ -14,7 +14,7 @@ stt:
 
 answer:
   server:
-    address: 192.168.50.182
+    address: 10.0.41.67
     port: 8080
   openai_key_path: 'save/keys/openai.txt'
   model_name: 'gpt-3.5-turbo'
