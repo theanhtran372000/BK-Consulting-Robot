@@ -4,14 +4,6 @@ app:
   save_dir: 'save/tmps'
   multithread: True
 
-stt:
-  config: 'stt/configs/quartznet12x1_vi.yaml'
-  encoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperEncoder-STEP-289936.pt'
-  decoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperDecoderForCTC-STEP-289936.pt'
-  lm_path: 'stt/models/language_model/3-gram-lm.binary'
-  beam_width: 50
-  device: 'gpu'
-
 answer:
   server:
     address: 10.0.41.67
@@ -27,7 +19,3 @@ answer:
   timeout: 2
   statement:
     connection_error: 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
-
-tts:
-  language: 'vi'
-  slow: False

@@ -2,6 +2,7 @@ import json
 import openai
 import sseclient
 
+# Get chat GPT answer
 def get_chatgpt_answer(prompt, model_name='gpt-3.5-turbo', role='user'):
     completion = openai.ChatCompletion.create(
         model=model_name,
@@ -13,6 +14,8 @@ def get_chatgpt_answer(prompt, model_name='gpt-3.5-turbo', role='user'):
     
     return completion['choices'][0]['message']['content']
 
+
+# Prepare for stream request
 # Temperature: 
 # - Lower temperature will be more focused and conservative 
 # - Higher temperature will be more creative and varied.
@@ -42,7 +45,9 @@ def prepare_streaming_request(
     }
     
     return  reqUrl, reqHeader, reqBody
-    
+
+
+# Streaming answer throw a generator
 def create_answer_generator(request, finish_word='[DONE]'):
     client = sseclient.SSEClient(request)
     
@@ -56,10 +61,3 @@ def create_answer_generator(request, finish_word='[DONE]'):
             yield finish_word
             
     client.close()
-        
-def format_sse(data: str, event=None):
-    msg = f'data: {data}\n\n'
-    if event is not None:
-        msg = f'event: {event}\n{msg}'
-    return msg
-    
