@@ -11,18 +11,21 @@ module_answer = Blueprint('answer', __name__)
 # Configs
 API_KEY = ''
 configs = None
+database = None
 
 # Configure function
-def configure(_API_KEY, _configs):
+def configure(_API_KEY, _configs, _database):
     global API_KEY
     global configs
+    global database
     
     # Local configs
     API_KEY = _API_KEY
     configs = _configs
+    database = _database
 
     # Configs submodules
-    stream_configure(API_KEY, configs)
+    stream_configure(API_KEY, configs, database)
     standard_configure()
 
 # Register submodules

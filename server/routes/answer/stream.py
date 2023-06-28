@@ -3,9 +3,12 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 import json
+import time
 import queue
+import pprint
 import requests
 import sseclient
+from PIL import Image
 from loguru import logger
 from threading import Thread
 from requests.adapters import HTTPAdapter
@@ -13,6 +16,7 @@ from flask import Blueprint, Response, request
 
 from utils.format import format_response, format_sse
 from utils.openai import prepare_streaming_request, create_answer_generator
+from utils.base64 import image_to_base64, base64_to_image
 
 module_stream = Blueprint('answer_stream', __name__)
 
@@ -21,21 +25,25 @@ module_stream = Blueprint('answer_stream', __name__)
 # Configs
 API_KEY = ''
 configs = None
+database = None
+
 
 # Stream configure function
-def stream_configure(_API_KEY, _configs):
+def stream_configure(_API_KEY, _configs, _database):
     global API_KEY
     global configs
+    global database
     
     API_KEY = _API_KEY
     configs = _configs
+    database = _database
 
 
 ### === API === ###
 
 # Unstable stream: 1 trial
 @module_stream.route('/unstable', methods=['POST'])
-def stream_answer():
+def stream_answer_unstable():
     
     # Get params
     content = request.get_json()
@@ -48,7 +56,7 @@ def stream_answer():
             'error',
             'Question not found!',
             None
-        )
+        ), 400
     
     try:
         # Streaming result from ChatGPT
@@ -102,21 +110,36 @@ def stream_answer():
 # Stable stream: multiple trials
 @module_stream.route('/stable', methods=['POST'])
 def stream_answer_stable():
-    # Get params
-    content = request.get_json()
-    if 'question' in content:
-        query = content['question']
-        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
-    else:
-        logger.error('Question not found!')
+    start = time.time()
+    
+    # Get face image
+    if 'face' not in request.files:
         return format_response(
             'error',
-            'Question not found!',
+            'Face not found!',
             None
-        )
-        
+        ), 400
+    face = Image.open(request.files['face'])
+    
+    # Convert face to base64
+    face_b64 = image_to_base64(face)
+    
+    # Get params
+    content = request.form
+    if 'question' in content and 'system_id' in content:
+        query = content['question']
+        system_id = content['system_id']
+        logger.info('Recieve question from system "{}": "{}"'.format(system_id, query))
+    else:
+        logger.error('Question or System ID not found!')
+        return format_response(
+            'error',
+            'Question/System ID not found!',
+            None
+        ), 400          
+    
     # Streaming result from ChatGPT
-    logger.info('[ANSWER] Streaming answer:')
+    logger.info('Streaming answer:')
     url, header, body = prepare_streaming_request(
         query, 
         API_KEY, 
@@ -133,6 +156,7 @@ def stream_answer_stable():
     timeout = configs['answer']['timeout']
     error_statement = configs['answer']['statement']['connection_error']
     
+    # Recieve thread
     def chatgpt_reciever(
         url, header, body, 
         word_queue, retry_time, timeout, 
@@ -215,9 +239,11 @@ def stream_answer_stable():
     
     # Create stream to send answer
     def stream(word_queue, finish_word):
+        result = ''
         while True:
             # Get words from queue
             data = word_queue.get()
+            result += data
             print(data, end='', flush=True)
             
             # Reformat and return
@@ -229,6 +255,27 @@ def stream_answer_stable():
             if data == finish_word:
                 print()
                 logger.info('Meet finish word {}. Stop responding!'.format(finish_word))
+                
+                # Save data to mongo
+                try:
+                    # Get collection
+                    history = database[configs['mongo']['cols']['history']]
+                    
+                    # Insert new sample
+                    document = {
+                        "system_id": system_id,
+                        "question": query,
+                        "answer": result,
+                        "face": face_b64,
+                        "start": start,
+                        "end": time.time()
+                    }
+                    history.insert_one(document)
+                    
+                    logger.success('Saved conversation data to DB')
+                except:
+                    logger.exception('Fail to insert conversation data to DB')
+                
                 break
         
     return Response(stream(word_queue, finish_word), mimetype='text/event-stream')

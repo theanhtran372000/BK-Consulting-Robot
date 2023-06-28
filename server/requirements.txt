@@ -4,3 +4,6 @@ PyYAML
 openai
 loguru
 sseclient-py
+pillow
+pymongo
+pika

@@ -4,6 +4,25 @@ app:
   save_dir: 'save/tmps'
   multithread: True
 
+mongo:
+  host: 172.20.80.1
+  port: 27017
+  name: 'BKConsultingRobot'
+  cols:
+    history: 'history'
+    face_track: 'face_track'
+    stats: 'stats'
+
+rabbitmq:
+  rabbitmq:
+  host: 172.20.80.1
+  user: 'theanh'
+  pass: '123456'
+  queues:
+    log_stats: 'stats'
+    log_face_track: 'face_track'
+  log_state: False
+
 answer:
   server:
     address: 10.0.41.67
