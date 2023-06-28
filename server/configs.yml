@@ -4,17 +4,28 @@ app:
   save_dir: 'save/tmps'
   multithread: True
 
-stt:
-  config: 'stt/configs/quartznet12x1_vi.yaml'
-  encoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperEncoder-STEP-289936.pt'
-  decoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperDecoderForCTC-STEP-289936.pt'
-  lm_path: 'stt/models/language_model/3-gram-lm.binary'
-  beam_width: 50
-  device: 'gpu'
+mongo:
+  host: 172.20.80.1
+  port: 27017
+  name: 'BKConsultingRobot'
+  cols:
+    history: 'history'
+    face_track: 'face_track'
+    stats: 'stats'
+
+rabbitmq:
+  rabbitmq:
+  host: 172.20.80.1
+  user: 'theanh'
+  pass: '123456'
+  queues:
+    log_stats: 'stats'
+    log_face_track: 'face_track'
+  log_state: False
 
 answer:
   server:
-    address: 192.168.50.182
+    address: 10.0.41.67
     port: 8080
   openai_key_path: 'save/keys/openai.txt'
   model_name: 'gpt-3.5-turbo'
@@ -27,7 +38,3 @@ answer:
   timeout: 2
   statement:
     connection_error: 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
-
-tts:
-  language: 'vi'
-  slow: False
