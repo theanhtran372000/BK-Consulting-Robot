@@ -1,5 +1,14 @@
+system_id: 'bkbot-01'
+
+rabbitmq:
+  host: '169.254.234.10'
+  user: 'theanh'
+  pass: '123456'
+  queues:
+    log_stats: 'stats'
+    log_face_track: 'face_track'
+
 stats:
   dir: log/stats
   every: 10 # seconds
   mem_threshold: 95 # % of memory
-  exit_code: 100
