@@ -1,8 +1,8 @@
 server:
   address: '169.254.234.10'
   port: 9000
-  # api: custom_stream_answer
-  api: stream_answer_stable
+  api: /answer/stream/stable
+  # api: /answer/stream/stable/hust
 
 device:
   mic_index: 11

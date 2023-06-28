@@ -2,6 +2,7 @@ import os
 import gc
 import re
 import time
+import json
 import yaml
 import uuid
 import queue
@@ -33,13 +34,10 @@ from utils.angle import calculate_angle
 from utils.sound import play_sound_async, play_sound_sync
 from utils.answer import get_chatgpt_answer, apply_prompt
 from utils.distance import in_active_range
+from utils.rabbitmq import connect, publish, create_queue
 
 
 ### === Variables === ###
-# Bool Vars
-# cam_stop = False
-# error = False
-# appear = False
 
 # Event
 cam_stop_event = threading.Event()
@@ -48,6 +46,7 @@ appear_event = threading.Event()
 
 # Global vars
 current_face = None
+ask_face = None
 
 # Lock
 current_face_lock = threading.Lock()
@@ -71,7 +70,12 @@ def get_parser():
 
 
 # Camera thread: Update camera position function
-def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
+def track_face(
+    cap, 
+    w, h, w_scale, h_scale, 
+    model, ser, cam_configs, 
+    channel, log_configs
+):
     
     # Global vars
     global error_event
@@ -174,6 +178,18 @@ def track_face(cap, w, h, w_scale, h_scale, model, ser, cam_configs):
                     currentThread().getName(), 
                     avg_elapsed_ms, 
                     1000 / avg_elapsed_ms
+                )
+                
+                # Publish to RabbitMQ
+                publish(
+                    channel,
+                    log_configs['rabbitmq']['queues']['log_face_track'],
+                    json.dumps({
+                        'system_id': log_configs['system_id'],
+                        'elapsed_time': avg_elapsed_ms,
+                        'fps': 1000 / avg_elapsed_ms,
+                        'at': time.time()
+                    })
                 )
                 
                 # log
@@ -330,7 +346,7 @@ def generate_speech(speech_configs):
         error_event.set()
 
 # Log thread: Log system stats
-def log_stats(log_configs, sleep_time=0.2):
+def log_stats(channel, log_configs, sleep_time=0.2):
     
     # Prepare for logs
     log_dir = log_configs['stats']['dir']
@@ -339,7 +355,6 @@ def log_stats(log_configs, sleep_time=0.2):
     log_path = os.path.join(log_dir, log_file)
     log_every = log_configs['stats']['every']
     mem_threshold = log_configs['stats']['mem_threshold']
-    exit_code = log_configs['stats']['exit_code']
     
     start = time.time()
     while True:
@@ -359,6 +374,7 @@ def log_stats(log_configs, sleep_time=0.2):
                     ram_used, ram_total
                 )
                 
+                # Write to file
                 f.write(
                     '[{}] {}\n'.format(
                         datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
@@ -366,7 +382,22 @@ def log_stats(log_configs, sleep_time=0.2):
                     )
                 )
                 
+                # Log to console
                 logger.info('{}: {}'.format(currentThread().getName(), content))
+                
+                # Publish to RabbitMQ
+                publish(
+                    channel,
+                    log_configs['rabbitmq']['queues']['log_stats'],
+                    json.dumps({
+                        'system_id': log_configs['system_id'],
+                        'cpu_percent': cpu_percent,
+                        'ram_percent': ram_percent,
+                        'ram_used': ram_used,
+                        'ram_total': ram_total,
+                        'at': time.time()
+                    })
+                )
                 
                 if ram_percent >= mem_threshold:
                     logger.info('{}: Ram used exceed memory threshold of {}%'.format(currentThread().getName(), mem_threshold))
@@ -430,6 +461,25 @@ def main():
     # Create dir
     Path(speech_configs['save']['dir']).mkdir(parents=True, exist_ok=True)
     
+    # Init RabbitMQ
+    channel = connect(
+        host=log_configs['rabbitmq']['host'],
+        username=log_configs['rabbitmq']['user'],
+        password=log_configs['rabbitmq']['pass']
+    )
+    logger.success('{}: Connect to RabbitMQ server at {}'.format(
+        currentThread().getName(), 
+        log_configs['rabbitmq']['host']
+    ))
+    
+    # Create queues
+    for queue in log_configs['rabbitmq']['queues']:
+        create_queue(channel, log_configs['rabbitmq']['queues'][queue])
+        logger.success('{}: Create queue {} on RabbitMQ'.format(
+            currentThread().getName(),
+            log_configs['rabbitmq']['queues'][queue]
+        ))
+    
     ### === CAMERA SECTION === ###
     # 1. Init on main thread
     # Open camera
@@ -468,7 +518,9 @@ def main():
             w_scale, h_scale, 
             model, 
             ser, 
-            cam_configs
+            cam_configs,
+            channel,
+            log_configs
         )
     )
     face_track_thread.start()
@@ -478,6 +530,7 @@ def main():
         name='Log Stats Thread',
         target=log_stats,
         args=(
+            channel,
             log_configs,
             speech_configs['device']['sleep_time']
         )
@@ -510,6 +563,11 @@ def main():
                 
                 # If face is none (distance = 9999) or face out of range
                 with current_face_lock:
+                    # Backup asking face to send to server
+                    if current_face is not None:
+                        ask_face = current_face.copy() 
+                    
+                    # Calculate distance
                     distance, in_range = in_active_range(
                         current_face,
                         cam_configs['cam']['active_range'],
@@ -517,13 +575,14 @@ def main():
                         cam_configs['cam']['range_precise']
                     )
                 
+                # Pass if not in range
                 if not in_range:
                     time.sleep(speech_configs['device']['sleep_time'])
                     continue
                 
                 # Else: active to user
                 logger.info('{}: Detect user in active range. Distance {}m.'.format(currentThread().getName(), distance))
-                
+                    
                 
                 # LISTEN
                 # Adjust energy threshold for background noise
@@ -601,17 +660,34 @@ def main():
                     play_sound_async(speech_configs['sample']['think'], speed, tone)
                     
                     # Get answer
-                    # TODO: Attach current face in request
+                    # Question
                     question = transcript
+                    
+                    # Encode face image to attach to request
+                    imencoded = cv2.imencode(".jpg", ask_face)[1]
+                    _file = {
+                        'face': (
+                            'image.jpg', 
+                            imencoded.tostring(), 
+                            'image/jpeg', 
+                            {
+                                'Expires': '0'
+                            }
+                        )
+                    }
+                    
+                    # Send request
                     response = requests.post(
-                        'http://{}:{}/{}'.format(
+                        'http://{}:{}{}'.format(
                             speech_configs['server']['address'],
                             speech_configs['server']['port'],
                             speech_configs['server']['api']
                         ),
-                        json={
+                        data={
+                            'system_id': log_configs['system_id'],
                             'question': question
                         },
+                        files=_file,
                         stream=True
                     )
                     
@@ -680,7 +756,7 @@ def main():
         logger.info('{}: System shut down!'.format(currentThread().getName()))
         
         # Kill process for sure
-        os.kill(os.getpid(), signal.SIGKILL) 
+        os.kill(os.getpid(), signal.SIGTERM) 
 
 if __name__ == "__main__":
     main()
