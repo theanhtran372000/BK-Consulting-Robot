@@ -3,12 +3,26 @@ app:
   port: 9000
   save_dir: 'save/tmps'
   multithread: True
+  
+token:
+  secrete_key_path: 'save/keys/secrete_key.txt'
+  algorithm: 'HS256'
+  expire:
+    days: 1
+    hours: 0
+    minutes: 0
+    seconds: 0
 
 mongo:
   host: 172.20.80.1
   port: 27017
   name: 'BKConsultingRobot'
   cols:
+    # Management collection
+    user: 'user'
+    system: 'system'
+
+    # Log collections
     history: 'history'
     face_track: 'face_track'
     stats: 'stats'

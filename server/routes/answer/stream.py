@@ -18,7 +18,7 @@ from utils.format import format_response, format_sse
 from utils.openai import prepare_streaming_request, create_answer_generator
 from utils.base64 import image_to_base64, base64_to_image
 
-module_stream = Blueprint('answer_stream', __name__)
+module = Blueprint('answer_stream', __name__)
 
 # Module config
 
@@ -29,7 +29,7 @@ database = None
 
 
 # Stream configure function
-def stream_configure(_API_KEY, _configs, _database):
+def configure(_API_KEY, _configs, _database):
     global API_KEY
     global configs
     global database
@@ -42,7 +42,7 @@ def stream_configure(_API_KEY, _configs, _database):
 ### === API === ###
 
 # Unstable stream: 1 trial
-@module_stream.route('/unstable', methods=['POST'])
+@module.route('/unstable', methods=['POST'])
 def stream_answer_unstable():
     
     # Get params
@@ -53,9 +53,9 @@ def stream_answer_unstable():
     else:
         logger.error('Question not found!')
         return format_response(
-            'error',
-            'Question not found!',
-            None
+            success=False,
+            message='Question not found!',
+            data=None
         ), 400
     
     try:
@@ -108,16 +108,16 @@ def stream_answer_unstable():
     
     
 # Stable stream: multiple trials
-@module_stream.route('/stable', methods=['POST'])
+@module.route('/stable', methods=['POST'])
 def stream_answer_stable():
     start = time.time()
     
     # Get face image
     if 'face' not in request.files:
         return format_response(
-            'error',
-            'Face not found!',
-            None
+            success=False,
+            message='Face not found!',
+            data=None
         ), 400
     face = Image.open(request.files['face'])
     
@@ -133,9 +133,9 @@ def stream_answer_stable():
     else:
         logger.error('Question or System ID not found!')
         return format_response(
-            'error',
-            'Question/System ID not found!',
-            None
+            success=False,
+            message='Question/System ID not found!',
+            data=None
         ), 400          
     
     # Streaming result from ChatGPT
@@ -280,8 +280,9 @@ def stream_answer_stable():
         
     return Response(stream(word_queue, finish_word), mimetype='text/event-stream')
 
+
 # Custom HUST stable stream answer
-@module_stream.route('/stable/hust', methods=['POST'])
+@module.route('/stable/hust', methods=['POST'])
 def custom_stream_answer():
     # Get params
     content = request.get_json()
@@ -291,10 +292,10 @@ def custom_stream_answer():
     else:
         logger.error('Question not found!')
         return format_response(
-            'error',
-            'Question not found!',
-            None
-        )
+            success=False,
+            message='Question not found!',
+            data=None
+        ), 400
         
     # Streaming result from ChatGPT
     logger.info('[ANSWER] Streaming answer:')
