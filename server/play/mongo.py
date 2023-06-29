@@ -28,7 +28,7 @@ collection = db[col_name]
 # # Insert one record: return _id
 # # Mongo will assign an unique _id for each document (record) if not specified
 # x = collection.insert_one(record)
-# print('Record id: {}'.format(x.inserted_id))
+# print('Record id: ' + str(x.inserted_id))
 
 
 # # Insert many records
@@ -53,8 +53,12 @@ collection = db[col_name]
 # Find document
 
 # Find first document
-x = collection.find_one()
-print('First doc: ', x)
+x = collection.find_one({
+    '_id': '0'
+})
+# print('First doc: ', x)
+print('Not found: ', x)
+print('Type: ', type(x))
 
 # Find all
 x = collection.find()
@@ -63,14 +67,17 @@ for doc in x:
     print('-', doc)
     
 # Find specific
-print('Result for address "37 Highway": ' )
-for doc in collection.find(
+result = collection.find(
     {
-        "address": "37 Highway" # Find
+        "address": "Highway 37" # Find
     }, 
     {
         'name': 0   # Exclude name from result
-    }):
+    }
+)
+print('Result for address "hway 3": ', result[0])
+print('Length: ', len(list(result)))
+for doc in result:
     print('-', doc)
 
 # Query
@@ -98,13 +105,15 @@ print('Delete: {} rows'.format(x.deleted_count))
 # Drop collection
 # collection.drop()
 
-collection.update_one({
-    'address': '37 Highway'
+result = collection.update_one({
+    'address': 'Green Grass 1'
 }, {
     '$set': {
-        'address': 'Highway 37'
+        'address': 'Green Grass 12'
     }
 })
+
+print('Update result: ', result)
 
 # Limit: first 5 rows
 for x in collection.find().limit(5):

@@ -1,9 +1,9 @@
 # Format user response
-def format_response(state, msg, result):
+def format_response(success, message, data):
     return {
-        'state': state,
-        'message': msg,
-        'result': result
+        'success': success,
+        'message': message,
+        'data': data
     }
   
         

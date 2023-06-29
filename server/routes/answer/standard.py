@@ -9,13 +9,13 @@ from flask import Blueprint, request
 from utils.openai import get_chatgpt_answer
 from utils.format import format_response
 
-module_standard = Blueprint('answer_standard', __name__)
-def standard_configure():
+module = Blueprint('answer_standard', __name__)
+def configure():
     pass
 
 
 # Get Answer from ChatGPT
-@module_standard.route('/', methods=['POST'])
+@module.route('/', methods=['POST'])
 def answer():
     start = time.time()
     
@@ -27,10 +27,10 @@ def answer():
     else:
         logger.error('Question not found!')
         return format_response(
-            'error',
-            'Question not found!',
-            None
-        )
+            success=False,
+            message='Question not found!',
+            data=None
+        ), 400
     
     # Get answer
     try:
@@ -38,19 +38,19 @@ def answer():
     except:
         logger.error('Failed to get answer!')
         return format_response(
-            'error',
-            'Failed to get answer!',
-            None
-        )
+            success=False,
+            message='Failed to get answer!',
+            data=None
+        ), 400
     
     
     logger.success('[ANSWER] Generate answer: "{}"'.format(answer))
     logger.success('[ANSWER] Done after {:.2f}s!'.format(time.time() - start))
     
     return format_response(
-        'success',
-        'Operation success!',
-        {
+        success=True,
+        message = 'Operation success!',
+        data = {
             'answer': answer
         }
-    )
+    ), 200

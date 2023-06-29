@@ -13,6 +13,8 @@ from flask_cors import CORS
 
 # Submodules
 from routes import answer
+from routes import user
+from routes import system
 
 # Callbacks
 from callbacks import face_callback_generator, stats_callback_generator
@@ -78,11 +80,24 @@ def main():
     # Create or get db object
     database = mongo[configs['mongo']['name']]
     
+    ### === Secrete key === ###
+    with open(configs['token']['secrete_key_path'], 'rb') as f:
+        SECRETE_KEY = f.read()
+    
     ### === APIs === ###
     logger.info('Setup APIs')
     # Register submodule
+    # Answer submodule
     answer.configure(API_KEY, configs, database)
-    app.register_blueprint(answer.module_answer, url_prefix='/answer')
+    app.register_blueprint(answer.module, url_prefix='/answer')
+    
+    # User submodule
+    user.configure(SECRETE_KEY, configs, database)
+    app.register_blueprint(user.module, url_prefix='/user')
+    
+    # System submodule
+    system.configure(SECRETE_KEY, configs, database)
+    app.register_blueprint(system.module, url_prefix='/system')
     
     ### === RabbitMQ === ###
     # Start consuming message in background

@@ -1,10 +1,10 @@
 from flask import Blueprint
 
-from .stream import module_stream, stream_configure
-from .standard import module_standard, standard_configure
+# Submodules
+from . import stream, standard
 
 # Create module answer
-module_answer = Blueprint('answer', __name__)
+module = Blueprint('answer', __name__)
 
 # Module config
 
@@ -25,9 +25,10 @@ def configure(_API_KEY, _configs, _database):
     database = _database
 
     # Configs submodules
-    stream_configure(API_KEY, configs, database)
-    standard_configure()
+    stream.configure(API_KEY, configs, database)
+    standard.configure()
+
 
 # Register submodules
-module_answer.register_blueprint(module_stream, url_prefix='/stream')
-module_answer.register_blueprint(module_standard, url_prefix='/standard')
+module.register_blueprint(stream.module, url_prefix='/stream')
+module.register_blueprint(standard.module, url_prefix='/standard')
