@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
+import time
+from datetime import datetime
 from bson.objectid import ObjectId
 from flask import Blueprint, request, g
 
@@ -73,11 +75,19 @@ def list_history():
         
     else:
         system_id = request.form['system_id']
+        
+    # Get time range
+    _from = int(request.form['from']) if 'from' in request.form else 0
+    _to = int(request.form['to']) if 'to' in request.form else time.time()
     
     # Get system
     collection = database[configs['mongo']['cols']['history']]
     found = collection.find({
-        'system_id': system_id
+        'system_id': system_id,
+        'start': {
+            '$gte': _from,
+            '$lte': _to
+        }
     })
     
     histories = []
@@ -88,7 +98,11 @@ def list_history():
         
     return format_response(
         success=True,
-        message='Find {} conversation on system {}'.format(len(histories), system_id),
+        message='Find {} conversation on system {} from {} to {}'.format(
+            len(histories), system_id,
+            datetime.fromtimestamp(_from),
+            datetime.fromtimestamp(_to),
+        ),
         data=histories
     ), 200
     
@@ -139,10 +153,18 @@ def list_stats():
     else:
         system_id = request.form['system_id']
     
+    # Get time range
+    _from = int(request.form['from']) if 'from' in request.form else 0
+    _to = int(request.form['to']) if 'to' in request.form else time.time()
+    
     # Get system
     collection = database[configs['mongo']['cols']['stats']]
     found = collection.find({
-        'system_id': system_id
+        'system_id': system_id,
+        'at': {
+            '$gte': _from,
+            '$lte': _to
+        }
     })
     
     list_stats = []
@@ -153,7 +175,11 @@ def list_stats():
         
     return format_response(
         success=True,
-        message='Find {} stats on system {}'.format(len(list_stats), system_id),
+        message='Find {} stats on system {} from {} to {}'.format(
+            len(list_stats), system_id,
+            datetime.fromtimestamp(_from), 
+            datetime.fromtimestamp(_to)
+        ),
         data=list_stats
     ), 200
 
@@ -204,10 +230,18 @@ def list_face_track():
     else:
         system_id = request.form['system_id']
     
+    # Get time range
+    _from = int(request.form['from']) if 'from' in request.form else 0
+    _to = int(request.form['to']) if 'to' in request.form else time.time()
+    
     # Get system
     collection = database[configs['mongo']['cols']['face_track']]
     found = collection.find({
-        'system_id': system_id
+        'system_id': system_id,
+        'at': {
+            '$gte': _from,
+            '$lte': _to
+        }
     })
     
     list_face_track = []
@@ -218,6 +252,10 @@ def list_face_track():
         
     return format_response(
         success=True,
-        message='Find {} face track states on system {}'.format(len(list_face_track), system_id),
+        message='Find {} face track states on system {} from {} to {}'.format(
+            len(list_face_track), system_id,
+            datetime.fromtimestamp(_from),
+            datetime.fromtimestamp(_to)
+        ),
         data=list_face_track
     ), 200

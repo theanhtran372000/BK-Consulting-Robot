@@ -1,9 +1,11 @@
+# App config
 app:
   host: '0.0.0.0'
   port: 9000
   save_dir: 'save/tmps'
   multithread: True
   
+# User access token
 token:
   secrete_key_path: 'save/keys/secrete_key.txt'
   algorithm: 'HS256'
@@ -13,6 +15,7 @@ token:
     minutes: 0
     seconds: 0
 
+# MongoDB config
 mongo:
   host: 172.20.80.1
   port: 27017
@@ -27,6 +30,7 @@ mongo:
     face_track: 'face_track'
     stats: 'stats'
 
+# RabbitMQ config
 rabbitmq:
   rabbitmq:
   host: 172.20.80.1
@@ -37,6 +41,7 @@ rabbitmq:
     log_face_track: 'face_track'
   log_state: False
 
+# Question-answering config
 answer:
   server:
     address: 10.0.41.67
