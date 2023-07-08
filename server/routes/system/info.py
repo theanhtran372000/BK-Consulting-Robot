@@ -48,7 +48,8 @@ def add_system():
     # Get system collection
     collection = database[configs['mongo']['cols']['system']]
     result = list(collection.find({
-        'system_id': system_id 
+        'system_id': system_id,
+        'user_id': current_user['_id']
     }))
     
     # System existed

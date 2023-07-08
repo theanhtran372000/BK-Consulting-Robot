@@ -8,7 +8,7 @@ from loguru import logger
 from threading import Thread
 
 # Flask
-from flask import Flask
+from flask import Flask, request, make_response
 from flask_cors import CORS
 
 # Submodules
@@ -38,6 +38,21 @@ app = Flask(__name__)
 cors = CORS(app) # Enable CORS
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+# Preflight requests
+@app.before_request
+def before_request():
+    
+    # If the request method is OPTIONS (a preflight request)
+    if request.method == 'OPTIONS':
+        
+        # Create a 200 response and add the necessary headers
+        response = make_response('OK')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        
+        # Return the response
+        return response
 
 # Main function
 def main():
