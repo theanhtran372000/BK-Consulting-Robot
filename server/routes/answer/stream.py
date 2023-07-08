@@ -170,7 +170,7 @@ def stream_answer_stable():
                 # Sending request
                 sess = requests.Session()
                 sess.mount(
-                    'https://api.openai.com.com', 
+                    'https://api.openai.com', 
                     HTTPAdapter(max_retries=0)
                 )
                 response = sess.post(
