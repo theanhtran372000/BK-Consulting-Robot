@@ -126,7 +126,7 @@ def stream_answer_stable():
     
     # Get params
     content = request.form
-    if 'question' in content and 'system_id' in content:
+    if 'question' in content or 'system_id' in content:
         query = content['question']
         system_id = content['system_id']
         logger.info('Recieve question from system "{}": "{}"'.format(system_id, query))
@@ -284,18 +284,33 @@ def stream_answer_stable():
 # Custom HUST stable stream answer
 @module.route('/stable/hust', methods=['POST'])
 def custom_stream_answer():
-    # Get params
-    content = request.get_json()
-    if 'question' in content:
-        query = content['question']
-        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
-    else:
-        logger.error('Question not found!')
+    start = time.time()
+    
+    # Get face image
+    if 'face' not in request.files:
         return format_response(
             success=False,
-            message='Question not found!',
+            message='Face not found!',
             data=None
         ), 400
+    face = Image.open(request.files['face'])
+    
+    # Convert face to base64
+    face_b64 = image_to_base64(face)
+    
+    # Get params
+    content = request.form
+    if 'question' in content or 'system_id' in content:
+        query = content['question']
+        system_id = content['system_id']
+        logger.info('Recieve question from system "{}": "{}"'.format(system_id, query))
+    else:
+        logger.error('Question or System ID not found!')
+        return format_response(
+            success=False,
+            message='Question/System ID not found!',
+            data=None
+        ), 400   
         
     # Streaming result from ChatGPT
     logger.info('[ANSWER] Streaming answer:')
@@ -379,7 +394,7 @@ def custom_stream_answer():
                     client.close()
     
     recieve_thread = Thread(
-        name='ChatGPT recieve thread',
+        name='HUST recieve thread',
         target=custom_reciever,
         args=(
             url, body,
@@ -394,9 +409,11 @@ def custom_stream_answer():
     
     # Create stream to send answer
     def stream(word_queue, finish_word):
+        result = ''
         while True:
             # Get words from queue
             data = word_queue.get()
+            result += data
             print(data, end='', flush=True)
             
             # Reformat and return
@@ -408,6 +425,27 @@ def custom_stream_answer():
             if data == finish_word:
                 print()
                 logger.info('Meet finish word {}. Stop responding!'.format(finish_word))
+                
+                # Save data to mongo
+                try:
+                    # Get collection
+                    history = database[configs['mongo']['cols']['history']]
+                    
+                    # Insert new sample
+                    document = {
+                        "system_id": system_id,
+                        "question": query,
+                        "answer": result,
+                        "face": face_b64,
+                        "start": start,
+                        "end": time.time()
+                    }
+                    history.insert_one(document)
+                    
+                    logger.success('Saved conversation data to DB')
+                except:
+                    logger.exception('Fail to insert conversation data to DB')
+                
                 break
         
     return Response(stream(word_queue, finish_word), mimetype='text/event-stream')

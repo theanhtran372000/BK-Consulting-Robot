@@ -57,3 +57,6 @@ answer:
   timeout: 2
   statement:
     connection_error: 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
+
+prompts:
+  extract: 'save/prompts/extract_keywords.txt'
