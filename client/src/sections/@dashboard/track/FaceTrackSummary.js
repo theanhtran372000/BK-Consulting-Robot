@@ -9,7 +9,7 @@ FaceTrackSummary.propTypes = {
   color: PropTypes.string,
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.string,
-  value: PropTypes.number.isRequired,
+  value: PropTypes.any,
   sx: PropTypes.object,
 };
 

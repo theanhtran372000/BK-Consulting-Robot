@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // @mui
-import { styled, alpha } from '@mui/material/styles';
+import { styled, alpha, useTheme } from '@mui/material/styles';
 import { 
   Box, 
   Link, 
@@ -16,7 +16,6 @@ import {
 import useResponsive from '../../../hooks/useResponsive';
 
 // components
-import Logo from '../../../components/logo';
 import Scrollbar from '../../../components/scrollbar';
 import NavSection from '../../../components/nav-section';
 import SystemSelect from './SystemSelect'
@@ -60,6 +59,7 @@ export default function Nav({
   openNav, onCloseNav 
 }) {
   const { pathname } = useLocation();
+  const theme = useTheme()
 
   const isDesktop = useResponsive('up', 'lg');
 
@@ -78,8 +78,21 @@ export default function Nav({
       }}
     >
       {/* Logo */}
-      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
-        <Logo />
+      <Box sx={{ 
+        px: 2.5, py: 3,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'left' 
+      }}>
+        <Avatar sx={{
+          width: theme.spacing(6),
+          height: theme.spacing(6)
+        }} src='/favicon/favicon.png' alt="photoURL" />
+
+        <Typography 
+          sx={{
+            ml: 1
+          }} variant='h5'
+          color={theme.palette.info.main}
+        >BKBot</Typography>
       </Box>
 
       {/* User info */}
