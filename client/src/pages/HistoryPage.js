@@ -15,7 +15,8 @@ import {
   HistoryDistribution,
   HistoryPieChart,
   HistoryTimeline,
-  HistoryConversationList
+  HistoryConversationList,
+  HistoryKeywords
 } from '../sections/@dashboard/history'
 
 // utils
@@ -31,10 +32,13 @@ import {
 
 // services
 import { listHistoryLog } from '../services/log';
+import { extractKeywords } from '../services/answer';
 
 // ----------------------------------------------------------------------
 
 export default function HistoryPage() {
+
+  const TOP_KEYWORDS = 10
 
   const theme = useTheme()
 
@@ -44,6 +48,7 @@ export default function HistoryPage() {
   } = useOutletContext()
 
   const [historyLogList, setHistoryLogList] = useState([])
+  const [keywordFrequencies, setKeywordFrequencies] = useState(null)
 
   const getHistoryDistribution = () => {
     const distribute = [
@@ -98,9 +103,31 @@ export default function HistoryPage() {
       if (!content.success) {
         console.log('Cant load track log data!')
         setHistoryLogList([])
+        setKeywordFrequencies(null)
       }
       else {
         setHistoryLogList(content.data)
+
+        const questions = content.data.map((sample) => sample.question)
+        const inputData = questions.join(' | ')
+
+        const response = await extractKeywords(inputData)
+        const keywordContent = await response.json()
+
+        if (!keywordContent.success) {
+          console.log('Cant extract keywords!')
+          setKeywordFrequencies(null)
+        }
+        else {
+          const keywords = JSON.parse(keywordContent.data.result)
+
+          // Sort keywords from high to low
+          const sortedKeywords = Object.fromEntries(
+            Object.entries(keywords).sort(([, a], [, b]) => b - a)
+          );
+          
+          setKeywordFrequencies(sortedKeywords)
+        }
       }
     }
     
@@ -190,17 +217,28 @@ export default function HistoryPage() {
         </Grid>
 
 
-        {/* Duration */}
+        {/* Conversations */}
         <Typography variant="h4" sx={{ mb: 5, mt: 8 }}>
           Conversations
         </Typography>
 
         <Grid container spacing={3}>
 
-          <Grid item xs={12} md={12} lg={12}>
+          <Grid item xs={12} md={6} lg={7}>
             <HistoryConversationList
               title="History"
               list={historyLogList}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={5}>
+            <HistoryKeywords
+              title='Keywords'
+              chartData={keywordFrequencies}
+              chartColors={[
+                theme.palette.error.main
+              ]}
+              top={TOP_KEYWORDS}
             />
           </Grid>
         

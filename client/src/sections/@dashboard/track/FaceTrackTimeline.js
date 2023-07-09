@@ -1,4 +1,3 @@
-import moment from "moment";
 import PropTypes from 'prop-types';
 import ReactApexChart from 'react-apexcharts';
 
