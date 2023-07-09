@@ -26,7 +26,7 @@ def configure(_API_KEY, _configs, _database):
 
     # Configs submodules
     stream.configure(API_KEY, configs, database)
-    standard.configure()
+    standard.configure(API_KEY, configs, database)
 
 
 # Register submodules
