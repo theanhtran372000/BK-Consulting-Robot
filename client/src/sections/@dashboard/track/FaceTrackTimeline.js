@@ -1,3 +1,4 @@
+import moment from "moment";
 import PropTypes from 'prop-types';
 import ReactApexChart from 'react-apexcharts';
 
@@ -30,19 +31,35 @@ export default function FaceTrackTimeline({ title, metric, subheader, chartColor
     xaxis: { 
       type: 'datetime',
       labels: {
-        format: 'MMM dd'
+        formatter: (epoch) => {
+          const date = new Date(epoch)
+          const dateString = date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          })
+          return dateString
+        }
       }
     },
     tooltip: {
       shared: true,
       intersect: false,
       x: {
-        format: 'hh:mm:ss'
+        formatter: (epoch) => {
+          const date = new Date(epoch)
+          const dateString = date.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            hour12: false,
+          })
+          return dateString
+        }
       },
       y: {
         formatter: (y) => {
           if (typeof y !== 'undefined') {
-            return `${y.toFixed(0)} ${metric}`;
+            return `${y} ${metric}`;
           }
           return y;
         },

@@ -1,8 +1,12 @@
 import { Outlet } from 'react-router-dom';
+
 // @mui
-import { styled } from '@mui/material/styles';
-// components
-import Logo from '../../components/logo';
+import { styled, useTheme } from '@mui/material/styles';
+import { 
+  Box, 
+  Typography, 
+  Avatar,  
+} from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -21,10 +25,27 @@ const StyledHeader = styled('header')(({ theme }) => ({
 // ----------------------------------------------------------------------
 
 export default function SimpleLayout() {
+
+  const theme = useTheme()
+
   return (
     <>
       <StyledHeader>
-        <Logo />
+        <Box sx={{ 
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'left' 
+        }}>
+          <Avatar sx={{
+            width: theme.spacing(8),
+            height: theme.spacing(8)
+          }} src='/favicon/favicon.png' alt="photoURL" />
+
+          <Typography 
+            sx={{
+              ml: 2
+            }} variant='h4'
+            color={theme.palette.info.main}
+          >BK-Bot</Typography>
+        </Box>
       </StyledHeader>
 
       <Outlet />
