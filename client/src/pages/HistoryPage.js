@@ -145,8 +145,35 @@ export default function HistoryPage() {
 
       <Container maxWidth="xl">
 
-        {/* Distribution */}
+        {/* Conversations */}
         <Typography variant="h4" sx={{ mb: 5 }}>
+          Conversations
+        </Typography>
+
+        <Grid container spacing={3}>
+
+          <Grid item xs={12} md={6} lg={7}>
+            <HistoryConversationList
+              title="History"
+              list={historyLogList}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={5}>
+            <HistoryKeywords
+              title='Keywords'
+              chartData={keywordFrequencies}
+              chartColors={[
+                theme.palette.error.main
+              ]}
+              top={TOP_KEYWORDS}
+            />
+          </Grid>
+        
+        </Grid>
+
+        {/* Distribution */}
+        <Typography variant="h4" sx={{ mb: 5, mt: 8 }}>
           Distribution
         </Typography>
 
@@ -211,34 +238,6 @@ export default function HistoryPage() {
               chartColors={[
                 theme.palette.success.main
               ]}
-            />
-          </Grid>
-        
-        </Grid>
-
-
-        {/* Conversations */}
-        <Typography variant="h4" sx={{ mb: 5, mt: 8 }}>
-          Conversations
-        </Typography>
-
-        <Grid container spacing={3}>
-
-          <Grid item xs={12} md={6} lg={7}>
-            <HistoryConversationList
-              title="History"
-              list={historyLogList}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6} lg={5}>
-            <HistoryKeywords
-              title='Keywords'
-              chartData={keywordFrequencies}
-              chartColors={[
-                theme.palette.error.main
-              ]}
-              top={TOP_KEYWORDS}
             />
           </Grid>
         

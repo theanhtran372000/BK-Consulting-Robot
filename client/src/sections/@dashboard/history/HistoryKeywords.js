@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import ReactApexChart from 'react-apexcharts';
 
-import { Card, CardHeader } from '@mui/material';
+import { Card, CardHeader, Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles'
 
 // ----------------------------------------------------------------------
 
@@ -14,6 +15,8 @@ HistoryKeywords.propTypes = {
 };
 
 export default function HistoryKeywords({ title, subheader, top, chartColors, chartData }) {
+  
+  const theme = useTheme()
   
   const chartSeries = [{
     name: 'Frequency',
@@ -39,16 +42,24 @@ export default function HistoryKeywords({ title, subheader, top, chartColors, ch
   }
 
   return (
-    <Card sx={{
-      p: 3
-    }}>
+    <Card>
       <CardHeader title={`${title} (Top ${top})`} subheader={subheader} />
 
-      <ReactApexChart 
-        type='bar' 
-        series={chartSeries} 
-        options={chartOptions} 
-        height={chartLabels.length * 25 + 100} />
+      <Box sx={{ p: 3, pb: 3 }} dir="ltr">
+        {chartLabels.length > 0 ? 
+          <ReactApexChart 
+            type='bar' 
+            series={chartSeries} 
+            options={chartOptions} 
+            height={385} /> :
+          <Typography
+            variant='body2' 
+            color={theme.palette.grey[600]}
+          >
+            There's no data to display!
+          </Typography>
+        }
+      </Box>
     </Card>
   );
 }
