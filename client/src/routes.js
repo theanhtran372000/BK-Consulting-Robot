@@ -29,7 +29,7 @@ export default function Router() {
           element: <DashboardLayout />,
           children: [
             { 
-              element: <Navigate to="/dashboard/track" />, 
+              element: <Navigate to="/dashboard/history" />, 
               index: true 
             },
             { 

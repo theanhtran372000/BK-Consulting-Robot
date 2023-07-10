@@ -3,7 +3,6 @@ import PropType from 'prop-types'
 
 // Mui
 import {
-  Typography,
   Stack
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
@@ -19,14 +18,14 @@ DateTimeSelect.propTypes = {
 export default function DateTimeSelect({ title, bindTime, onChangeTime }) {
   return (
     <Stack sx={{
-      mt: 2.5,
+      mt: 1.5,
       mx: 1.5
     }}>
-      <Typography sx={{ mb: 0.8 }} variant='caption'>
-        {title}
-      </Typography>
 
       <DateTimePicker 
+        sx={{
+          mt: 0.5
+        }}
         label={title}
         value={bindTime}
         onChange={onChangeTime}

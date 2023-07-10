@@ -92,7 +92,9 @@ export default function Nav({
             ml: 1
           }} variant='h5'
           color={theme.palette.info.main}
-        >BKBot</Typography>
+        >
+          BK-Bot
+        </Typography>
       </Box>
 
       {/* User info */}
