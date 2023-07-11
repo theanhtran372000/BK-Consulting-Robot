@@ -1,5 +1,5 @@
 server:
-  address: '169.254.234.10'
+  address: '34.142.221.212'
   port: 9000
   api: /answer/stream/stable
   # api: /answer/stream/stable/hust
