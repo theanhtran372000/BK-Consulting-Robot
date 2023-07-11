@@ -22,7 +22,7 @@ export default function Router() {
     {
       path: '/',
       element: <AppLayout />,
-      // errorElement: <Navigate to='/500' />,
+      errorElement: <Navigate to='/500' />,
       children: [
         {
           path: 'dashboard',
