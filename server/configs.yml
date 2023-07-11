@@ -17,7 +17,7 @@ token:
 
 # MongoDB config
 mongo:
-  host: 172.20.80.1
+  host: 34.142.221.212
   port: 27017
   name: 'BKConsultingRobot'
   cols:
@@ -33,7 +33,7 @@ mongo:
 # RabbitMQ config
 rabbitmq:
   rabbitmq:
-  host: 172.20.80.1
+  host: 34.142.221.212
   user: 'theanh'
   pass: '123456'
   queues:

@@ -1,6 +1,6 @@
 const configs = {
     server: {
-        host: '172.20.81.100',
+        host: '34.142.221.212',
         port: 9000
     }
 }

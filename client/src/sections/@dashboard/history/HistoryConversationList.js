@@ -30,11 +30,13 @@ export default function HistoryConversationList({ title, subheader, list }) {
   const theme = useTheme()
 
   return (
-    <Card>
+    <Card sx={{
+      height: '501px',
+    }}>
       <CardHeader title={title} subheader={subheader} />
 
       <Scrollbar>
-        <Stack spacing={0} sx={{ p: 3, pr: 0, pl: 0 }}>
+        <Stack height='500px' spacing={0} sx={{ p: 3, pr: 0, pl: 0 }}>
           {list.length > 0 ? 
             list.slice().reverse() // Reverse list
             .slice((currentPage - 1) * CONV_PER_PAGE, currentPage * CONV_PER_PAGE)
