@@ -56,7 +56,7 @@ export default function Conversation({ conversation }) {
         }}
       />
 
-      <Box sx={{ minWidth: 240, flexGrow: 1 }}>
+      <Box sx={{ minWidth: 160, flexGrow: 1 }}>
         <Typography 
           color="inherit" 
           variant="subtitle2" 

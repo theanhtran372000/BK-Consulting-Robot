@@ -23,6 +23,7 @@ export default function SystemSelect({ systemList, selectedIndex, handleChangeSy
       <FormControl sx={{
         mt: 2.5,
         mx: 1.5,
+        minWidth: '256px'
       }}>
         
         <InputLabel id="demo-simple-select-label">System ID</InputLabel>
