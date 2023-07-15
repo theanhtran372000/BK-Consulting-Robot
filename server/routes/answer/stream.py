@@ -22,7 +22,8 @@ module = Blueprint('answer_stream', __name__)
 
 # Module config
 
-# Configs
+# 
+SUPPORT_EXTENSONS = ['jpg', 'jpeg']
 API_KEY = ''
 configs = None
 database = None
@@ -119,6 +120,14 @@ def stream_answer_stable():
             message='Face not found!',
             data=None
         ), 400
+    ext = request.files['face'].filename.split('.')[1].lower()
+    if ext not in SUPPORT_EXTENSONS:
+        return format_response(
+            success=False,
+            message='Unsupported extension! Supported list: {}'.format(SUPPORT_EXTENSONS),
+            data=None
+        ), 400
+        
     face = Image.open(request.files['face'])
     
     # Convert face to base64
@@ -293,6 +302,14 @@ def custom_stream_answer():
             message='Face not found!',
             data=None
         ), 400
+    ext = request.files['face'].filename.split('.')[1].lower()
+    if ext not in SUPPORT_EXTENSONS:
+        return format_response(
+            success=False,
+            message='Unsupported extension! Supported list: {}'.format(SUPPORT_EXTENSONS),
+            data=None
+        ), 400
+        
     face = Image.open(request.files['face'])
     
     # Convert face to base64
