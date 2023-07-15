@@ -89,7 +89,9 @@ def main():
     ))
     mongo = get_mongo_client(
         configs['mongo']['host'],
-        configs['mongo']['port']
+        configs['mongo']['port'],
+        configs['mongo']['username'],
+        configs['mongo']['password']
     )
     
     # Create or get db object

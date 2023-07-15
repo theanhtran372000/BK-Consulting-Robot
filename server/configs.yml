@@ -19,6 +19,8 @@ token:
 mongo:
   host: 34.142.132.0
   port: 27017
+  username: 'theanh'
+  password: '372000'
   name: 'BKConsultingRobot'
   cols:
     # Management collection
