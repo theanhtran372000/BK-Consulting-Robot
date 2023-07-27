@@ -1,7 +1,7 @@
 system_id: 'bkbot-01'
 
 rabbitmq:
-  host: '34.142.221.212'
+  host: '34.142.132.0'
   user: 'theanh'
   pass: '123456'
   queues:
