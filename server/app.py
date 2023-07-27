@@ -1,34 +1,30 @@
-import os
-import sys
-sys.path.insert(0, os.path.abspath('stt'))
-
-
-import time
+# Libs
 import yaml
-import uuid
-import json
+import openai
+import pprint
 import argparse
 from pathlib import Path
-
-
-from flask import Flask, request, after_this_request, send_file, Response
 from loguru import logger
+from threading import Thread
+
+# Flask
+from flask import Flask, request, make_response
+from flask_cors import CORS
+
+# Submodules
+from routes import answer
+from routes import user
+from routes import system
+
+# Callbacks
+from callbacks import face_callback_generator, stats_callback_generator
+
+# Utils
+from utils.mongo import get_mongo_client
+from utils.rabbitmq import consumer_thread
 
 
-import requests
-import librosa
-import openai
-
-
-from gtts import gTTS
-from infer import VietASR
-from utils import format_sse
-from utils import create_answer_generator
-from utils import get_chatgpt_answer
-from utils import prepare_streaming_request
-
-
-# Helper fucntions
+# CLI Parser
 def get_parser():
     parser = argparse.ArgumentParser()
     
@@ -36,271 +32,125 @@ def get_parser():
     
     return parser
 
-def create_response(state, msg, result):
-    return {
-        'state': state,
-        'message': msg,
-        'result': result
-    }
 
 # Flask app
 app = Flask(__name__)
+cors = CORS(app) # Enable CORS
+app.config['CORS_HEADERS'] = 'Content-Type'
 
-
-@app.route("/hello")
-def hello():
-    return "Hello, World!"
-
-# Speech recognition
-@app.route('/stt', methods=['POST'])
-def stt():
-    start = time.time()
+# Preflight requests
+@app.before_request
+def before_request():
     
-    # Get audio file
-    _file = request.files['audio']
-    if _file.filename == '':
-        return create_response(
-            'error',
-            'File name is empty!',
-            None
-        )
-    
-    ext = _file.filename.split('.')[-1]
-    if ext not in ['wav', 'mp3']:
-        return create_response(
-            'error',
-            'File type {} not supported!'.format(ext),
-            None
-        )
+    # If the request method is OPTIONS (a preflight request)
+    if request.method == 'OPTIONS':
         
-    logger.info('Recieve file {}'.format(_file.filename))
-    
-    # Save file to local
-    localpath = os.path.join(configs['app']['save_dir'], '{}.{}'.format(str(uuid.uuid4()), ext))
-    _file.save(localpath)
-    
-    # Load file with librosa
-    audio_signal, _ = librosa.load(localpath, sr=16000)
-    
-    # Forward through model
-    try:
-        transcript = vietasr.transcribe(audio_signal)
-        logger.success('[SST] Transcript: ' + transcript)
-        logger.success('[SST] Done after {:.2f}s!'.format(time.time() - start))
-    except:
-        logger.error('Transcribe error!')
-        return create_response(
-            'error',
-            'Unknown transcribe error!',
-            None
-        )
-    
-    # Clean
-    @after_this_request
-    def remove_file(response):
-        try:
-            os.remove(localpath)
-            logger.info('{} removed!'.format(localpath))
-            
-        except Exception as error:
-            logger.error('Fail to remove {}'.format(localpath))
-            logger.error('Error message: ' + str(error))
-            
+        # Create a 200 response and add the necessary headers
+        response = make_response('OK')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        
+        # Return the response
         return response
-     
-    return create_response(
-        'success',
-        'Operation success!',
-        {
-            'transcript': transcript
-        }
-    )
-    
 
-# Get Answer
-@app.route('/answer', methods=['POST'])
-def answer():
-    start = time.time()
+# Main function
+def main():
     
-    # Get params
-    content = request.form
-    if 'question' in content:
-        query = content['question']
-        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
-    else:
-        logger.error('Question not found!')
-        return create_response(
-            'error',
-            'Question not found!',
-            None
-        )
-    
-    # Get answer
-    try:
-        answer = get_chatgpt_answer(query)
-    except:
-        logger.error('Failed to get answer!')
-        return create_response(
-            'error',
-            'Failed to get answer!',
-            None
-        )
-    
-    
-    logger.success('[ANSWER] Generate answer: "{}"'.format(answer))
-    logger.success('[ANSWER] Done after {:.2f}s!'.format(time.time() - start))
-    
-    return create_response(
-        'success',
-        'Operation success!',
-        {
-            'answer': answer
-        }
-    )
-    
-
-@app.route('/stream_answer', methods=['POST'])
-def stream_answer():
-    
-    # Get params
-    content = request.get_json()
-    if 'question' in content:
-        query = content['question']
-        logger.info('[ANSWER] Recieve question: "{}"'.format(query))
-    else:
-        logger.error('Question not found!')
-        return create_response(
-            'error',
-            'Question not found!',
-            None
-        )
-    
-    try:
-        # Streaming result from ChatGPT
-        logger.info('[ANSWER] Streaming answer:')
-        url, header, body = prepare_streaming_request(
-            query, 
-            API_KEY, 
-            model_name=configs['answer']['model_name'],
-            role=configs['answer']['role'],
-            temperature=configs['answer']['temperature'],
-            max_tokens=configs['answer']['max_tokens'],
-        )
-        
-        response = requests.post(
-            url,
-            headers=header,
-            json=body,
-            stream=True
-        )
-    
-        generator = create_answer_generator(
-            response,
-            finish_word=configs['answer']['finish_word']
-        )
-
-        def stream():
-            print()
-            for data in generator:
-                print(data, end='', flush=True)
-                data = data.replace('\n', configs['answer']['break_word'])
-                data = data.replace('\r', configs['answer']['break_word'])
-                yield format_sse(data)
-            print()
-            
-        return Response(stream(), mimetype='text/event-stream')
-    except:
-        logger.exception('Connection error!')
-        
-        def except_stream():
-            sent = 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
-            words = sent.split(' ')
-            
-            for word in words:
-                data = word + ' '
-                print(data, end='', flush=True)
-                yield format_sse(data)
-                
-        return Response(except_stream(), mimetype='text/event-stream')
-
-@app.route('/tts', methods=['POST'])
-def tts():
-    start = time.time()
-    
-    # Get params
-    content = request.form
-    if 'text' in content:
-        text = content['text']
-        logger.info('[TTS] Recieve text: "{}"'.format(text))
-    else:
-        logger.error('Text not found!')
-        return create_response(
-            'error',
-            'Text not found!',
-            None
-        )
-        
-    # Convert to speech
-    speech = gTTS(
-        text=text, 
-        lang=configs['tts']['language'], 
-        slow=configs['tts']['slow']
-    )
-    
-    # Save file
-    localpath = os.path.join(
-        configs['app']['save_dir'], 
-        '{}.mp3'.format(uuid.uuid4())
-    )
-    speech.save(localpath)
-    logger.success('[TTS] Speech file generate successfully!')
-    logger.success('[TTS] Done after {:.2f}s!'.format(time.time() - start))
-    
-    # Clean
-    @after_this_request
-    def remove_file(response):
-        try:
-            os.remove(localpath)
-            logger.info('{} removed!'.format(localpath))
-            
-        except Exception as error:
-            logger.error('Fail to remove {}'.format(localpath))
-            logger.error('Error message: ' + str(error))
-            
-        return response
-    
-    return send_file(localpath)
-    
-
-if __name__ == '__main__':
+    ### === CLI === ###
     parser = get_parser()
     args = parser.parse_args()
     
+    ### === Preparation === ###
     # Read config
     with open(args.config, 'r') as f:
         configs = yaml.load(f, yaml.FullLoader)
     
-    logger.info('Configs: ' + str(configs))  
+    logger.info('Configs: {}'.format(
+        pprint.pformat(configs)
+    ))  
     
     # Create dir
-    logger.info('All temporary files saved at {}'.format(configs['app']['save_dir']))
+    logger.info('All temporary files saved at {}'.format(
+        configs['app']['save_dir']
+    ))
     Path(configs['app']['save_dir']).mkdir(parents=True, exist_ok=True)
     
-    # Init Open AI
+    ### === Open AI === ###
     logger.info('Config OpenAI')  
     API_KEY = open(configs['answer']['openai_key_path'], 'r').read().strip()
     openai.api_key = API_KEY
     
-    
-    # Init STT model (VietASR)
-    vietasr = VietASR(
-        config_file=configs['stt']['config'],
-        encoder_checkpoint=configs['stt']['encoder_checkpoint'],
-        decoder_checkpoint=configs['stt']['decoder_checkpoint'],
-        lm_path=configs['stt']['lm_path'],
-        beam_width=configs['stt']['beam_width'],
-        device=configs['stt']['device']
+    ### === MongoDB === ###
+    # Connect to mongodb
+    logger.info('Connect to MongoDB at {}:{}'.format(
+        configs['mongo']['host'],
+        configs['mongo']['port']
+    ))
+    mongo = get_mongo_client(
+        configs['mongo']['host'],
+        configs['mongo']['port'],
+        configs['mongo']['username'],
+        configs['mongo']['password']
     )
     
+    # Create or get db object
+    database = mongo[configs['mongo']['name']]
+    
+    ### === Secrete key === ###
+    with open(configs['token']['secrete_key_path'], 'rb') as f:
+        SECRETE_KEY = f.read()
+    
+    ### === APIs === ###
+    logger.info('Setup APIs')
+    # Register submodule
+    # Answer submodule
+    answer.configure(API_KEY, configs, database)
+    app.register_blueprint(answer.module, url_prefix='/answer')
+    
+    # User submodule
+    user.configure(SECRETE_KEY, configs, database)
+    app.register_blueprint(user.module, url_prefix='/user')
+    
+    # System submodule
+    system.configure(SECRETE_KEY, configs, database)
+    app.register_blueprint(system.module, url_prefix='/system')
+    
+    ### === RabbitMQ === ###
+    # Start consuming message in background
+    log_state = configs['rabbitmq']['log_state']
+    
+    # Face track consumer
+    face_thread = Thread(
+        name='Face Track Consume Thread',
+        target=consumer_thread,
+        args=(
+            configs,
+            configs['rabbitmq']['queues']['log_face_track'],
+            face_callback_generator(configs, database, log_state)
+        )
+    )
+    face_thread.start()
+    logger.info('Running consumer for queue {} in background thread...'.format(configs['rabbitmq']['queues']['log_face_track']))
+    
+    # Stats log consumer
+    stats_thread = Thread(
+        name='Stats Consume Thread',
+        target=consumer_thread,
+        args=(
+            configs,
+            configs['rabbitmq']['queues']['log_stats'],
+            stats_callback_generator(configs, database, log_state)
+        )
+    )
+    stats_thread.start()
+    logger.info('Running consumer for queue {} in background thread...'.format(configs['rabbitmq']['queues']['log_stats']))
+
+    ### === Flask Server === ###
+    # Run server
     logger.info('Server is listening at {}!'.format(configs['app']['port']))
     app.run(host=configs['app']['host'], port=configs['app']['port'], threaded=configs['app']['multithread'])
+
+
+if __name__ == '__main__':
+    main()

@@ -5,20 +5,12 @@ Source code for BK Consulting Robot Server
 - Create virtual environment
 ```
 python -m venv venv
-source venv/bin/activate
+
 ```
-- Clone VietASR repo to `stt` directory
+- Activate environment
 ```
-mkdir stt
-git clone git@github.com:dangvansam98/viet-asr.git stt
-```
-- Install `torch`
-```
-pip install torch===1.11.0+cu115 torchvision===0.12.0 torchaudio===0.11.0 -f https://download.pytorch.org/whl/torch_stable.html
-```
-- Install `kenlm`
-```
-pip install https://github.com/kpu/kenlm/archive/master.zip
+source venv/bin/activate # For linux
+.\venv\Scripts\activate
 ```
 - Install requirements
 ```
@@ -26,7 +18,7 @@ pip install -r requirements.txt
 ```
 
 ## 2. Run
-To config server params, go to file `configs.yml`. Then run server with following command:
+To change server configs, go to file `configs.yml`. Then run server with following command:
 ```
 bash scripts/run.sh
 ```

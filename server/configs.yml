@@ -1,18 +1,53 @@
+# App config
 app:
   host: '0.0.0.0'
   port: 9000
   save_dir: 'save/tmps'
   multithread: True
+  
+# User access token
+token:
+  secrete_key_path: 'save/keys/secrete_key.txt'
+  algorithm: 'HS256'
+  expire:
+    days: 1
+    hours: 0
+    minutes: 0
+    seconds: 0
 
-stt:
-  config: 'stt/configs/quartznet12x1_vi.yaml'
-  encoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperEncoder-STEP-289936.pt'
-  decoder_checkpoint: 'stt/models/acoustic_model/vietnamese/JasperDecoderForCTC-STEP-289936.pt'
-  lm_path: 'stt/models/language_model/3-gram-lm.binary'
-  beam_width: 50
-  device: 'gpu'
+# MongoDB config
+mongo:
+  host: 34.142.132.0
+  port: 27017
+  username: 'theanh'
+  password: '372000'
+  name: 'BKConsultingRobot'
+  cols:
+    # Management collection
+    user: 'user'
+    system: 'system'
 
+    # Log collections
+    history: 'history'
+    face_track: 'face_track'
+    stats: 'stats'
+
+# RabbitMQ config
+rabbitmq:
+  rabbitmq:
+  host: 34.142.132.0
+  user: 'theanh'
+  pass: '123456'
+  queues:
+    log_stats: 'stats'
+    log_face_track: 'face_track'
+  log_state: False
+
+# Question-answering config
 answer:
+  server:
+    address: 10.0.41.67
+    port: 8080
   openai_key_path: 'save/keys/openai.txt'
   model_name: 'gpt-3.5-turbo'
   temperature: 0.7
@@ -20,7 +55,10 @@ answer:
   max_tokens: 1024
   finish_word: '[DONE]'
   break_word: '[BREAK]'
+  retry: 3 # times
+  timeout: 2
+  statement:
+    connection_error: 'Kết nối không ổn định. Vui lòng thử lại sau.[DONE]'
 
-tts:
-  language: 'vi'
-  slow: False
+prompts:
+  extract: 'save/prompts/extract_keywords.txt'
