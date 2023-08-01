@@ -333,11 +333,23 @@ def custom_stream_answer():
     logger.info('[ANSWER] Streaming answer:')
     
     # Prepare request info
-    url = 'http://{}:{}/stream_questions'.format(
-        configs['answer']['server']['address'],
-        configs['answer']['server']['port']
-    )
     
+    url = ''
+    
+    # IP
+    if 'http' in configs['answer']['server']['address']:
+        url += configs['answer']['server']['address']
+    else:
+        url += 'http://{}'.format(configs['answer']['server']['address'])
+    
+    # Port
+    if configs['answer']['server']['port'] is not None:
+        url += ':{}'.format(configs['answer']['server']['port'])
+    
+    # API
+    url += '/stream_questions'
+        
+    # Prepare body
     body = {
         'text': query
     }
