@@ -1,19 +1,24 @@
 # BK Consulting Robot - Jetson
-Source code for Jetson Nano in BK Consulting Robot project
+Source code cho Jetson Nano trong hệ thống BKBot.
 
-## 1. Installation
-(Future development)
+## 1. Yêu cầu hệ thống
+- Thư viện
+    - OpenCV
+    - TensorRT
+    - Pytorch
+    - SpeechRecognition
+    - gTTS
+- Mô hình phát hiện khuôn mặt: [Yunet.trt](https://drive.google.com/file/d/1iKt2XgVe_YNRp9L89ZyCE8gm3eTJ-k2l/view?usp=sharing)
+- Thiết bị: Jetson Nano
+![Jetson Nano](../images/Jetson.png)
 
-## 2. Run
-- To convert Yunet model to TensorRT
-```
-bash scripts/convert.sh
-```
-- To generate a specific speech file:
-```
-bash scripts/generate_speech.sh
-```
-- To run the program
+## 2. Chạy hệ thống
+Các file để cấu hình hệ thống được đặt trong folder `configs`. Sau khi hoàn thành cấu hình, chạy chương trình theo một trong 2 cách sau:
+- Chạy thông thường
 ```
 bash scripts/run.sh
+```
+- Chạy tự động
+```
+bash scripts/autorun.sh
 ```
