@@ -27,7 +27,7 @@ Giao diện trang web:
 - Trang chủ
 ![Trang web quản trị](../images/Dashboard.png)
 
-Truy cập và trải nghiệm trực tiếp tại địa chỉ [34.142.132.0:3000](34.142.132.0:3000). Tài khoản thử nghiệm:
+Truy cập và trải nghiệm trực tiếp tại địa chỉ `34.142.132.0:3000`. Tài khoản thử nghiệm:
 
 - Username: `theanh`
 - Password: `Abc123mnpq!`

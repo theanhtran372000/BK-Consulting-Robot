@@ -22,4 +22,4 @@ File `configs.yml` chứa những configs cần thiết để thiết lập serv
 bash scripts/run.sh
 ```
 
-Server đang được chạy tại [34.142.132.0:9000](34.142.132.0:9000).
+Server đang được chạy tại `34.142.132.0:9000`.
