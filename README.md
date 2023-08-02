@@ -5,8 +5,8 @@ Source code của hệ thống BKBot.
 
 Thông tin của đồ án:
 
-- **Tên đề tài:** Ứng dụng tư vấn tuyển sinh ứng dụng trí tuệ nhân tạo trên hệ thống biên
-- **Người thực hiện:** Trần Thế Anh - 20183688 - Trường Công nghệ thông tin và Truyền thông
+- **Tên đề tài:** *Ứng dụng tư vấn tuyển sinh ứng dụng trí tuệ nhân tạo trên hệ thống biên*
+- **Người thực hiện:** **Trần Thế Anh** - *20183688* - *Trường Công nghệ thông tin và Truyền thông*
 - **Mục tiêu:** Tăng trải nghiệm người dùng trong các giải pháp tư vấn tuyển sinh bằng cách ứng dụng AI và thiết bị biên
 - **Phạm vi:** Tư vấn các chủ đề trong trường Công nghệ thông tin và Truyền thông
 
@@ -14,7 +14,7 @@ Thông tin của đồ án:
 
 ![Kiến trúc hệ thống](images/Sơ-đồ-tổng-quan.png)
 
-Hệ thống gồm 3 mô-đun chính:
+Hệ thống gồm 3 thành phần chính:
 
 - **Hệ thống biên:** Hệ thống các thiết bị phần cứng thực hiện tương tác trực tiếp với người dùng.
 - **Khối quản trị:** Trung tâm của hệ thống, thực hiện trung chuyển, lưu trữ và phân tích dữ liệu.
