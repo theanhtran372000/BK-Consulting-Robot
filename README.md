@@ -46,7 +46,6 @@ Repository được chia thành 4 phần:
 
 - Môi trường triển khai:
     - Địa điểm: Trung tâm Edtech, tầng 9, tòa B1, Đại học Bách Khoa Hà Nội
-    ![Trung tâm Edtech](images/edtech.jpg)
     - Thời gian: 10h30 - 12h, ngày 24/6/2023
     - Đối tượng: Khoảng 30 học sinh từ trường cấp 3 Tạ Quang Bửu
 
