@@ -44,18 +44,18 @@ Repository được chia thành 4 phần:
 ## 4. Triển khai thực tế
 
 
-- Môi trường triển khai:
-    - Địa điểm: Trung tâm Edtech, tầng 9, tòa B1, Đại học Bách Khoa Hà Nội
-    - Thời gian: 10h30 - 12h, ngày 24/6/2023
-    - Đối tượng: Khoảng 30 học sinh từ trường cấp 3 Tạ Quang Bửu
+- **Môi trường triển khai**:
+    - **Địa điểm:** Trung tâm Edtech, tầng 9, tòa B1, Đại học Bách Khoa Hà Nội
+    - **Thời gian:** 10h30 - 12h, ngày 24/6/2023
+    - **Đối tượng:** Khoảng 30 học sinh từ trường cấp 3 Tạ Quang Bửu
 
-- Hình ảnh của buổi thử nghiệm:
+- **Hình ảnh của buổi thử nghiệm:**
 ![Buổi thử nghiệm](images/Buổi-thử-nghiệm.png)
 
-- Kết quả đánh giá:
-    - Chất lượng hệ thống
+- **Kết quả đánh giá:**
+    - *Chất lượng hệ thống*
     ![Đánh giá hệ thống](images/Đánh-giá-phần-cứng.png)
-    - Chất lượng câu trả lời
+    - *Chất lượng câu trả lời*
     ![Đánh giá câu trả lời](images/Đánh-giá-câu-trả-lời.png)
-    - Đề xuất cải thiện
+    - *Đề xuất cải thiện*
     ![Góp ý](images/Đề-xuất-cải-thiện.png)
