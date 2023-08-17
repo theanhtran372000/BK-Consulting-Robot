@@ -11,4 +11,4 @@ rabbitmq:
 stats:
   dir: log/stats
   every: 10 # seconds
-  mem_threshold: 95 # % of memory
+  mem_threshold: 85 # % of memory

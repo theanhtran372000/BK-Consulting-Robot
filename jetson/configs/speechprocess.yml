@@ -1,8 +1,8 @@
 server:
   address: '34.142.132.0'
   port: 9000
-  api: /answer/stream/stable
-  # api: /answer/stream/stable/hust
+  # api: /answer/stream/stable
+  api: /answer/stream/stable/hust
 
 device:
   mic_index: 11
